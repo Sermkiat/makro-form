@@ -1,133 +1,76 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>บันทึกบิลแม็คโคร</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สรุปการเงิน</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet" />
-  <style>
-    body { font-family: 'Prompt', sans-serif; }
-  </style>
 </head>
-<body class="bg-gray-100 p-4">
-  <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
-    <h2 class="text-2xl font-bold mb-4">📦 ฟอร์มบันทึกบิลแม็คโคร</h2>
+<body class="bg-gray-100 font-sans">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">📋 หน้าหลัก - สรุปการเงิน</h1>
 
-    <label class="block mb-2">🔢 หมายเลขบิล:
-      <input type="text" id="billNo" placeholder="เช่น M-20240509-001" class="w-full border px-2 py-2 rounded mt-1" required />
-    </label>
-
-    <label class="block mb-4">🗓 วันที่ซื้อ:
-      <input type="date" id="purchaseDate" class="w-full border px-2 py-2 rounded mt-1" required />
-    </label>
-
-    <div id="itemBody" class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center border p-3 rounded shadow-sm bg-gray-50">
-        <input name="item" placeholder="รายการที่ซื้อ" class="col-span-2 border rounded px-2 py-1 w-full" required />
-        <input name="qty" type="number" placeholder="จำนวน" class="border rounded px-2 py-1 w-full" required oninput="calculateTotal(this.parentElement)" />
-        <input name="unitPrice" type="number" step="0.01" placeholder="ราคาต่อหน่วย" class="border rounded px-2 py-1 w-full" required oninput="calculateTotal(this.parentElement)" />
-        <input name="totalPrice" type="number" step="0.01" placeholder="ราคารวม" class="border rounded px-2 py-1 w-full bg-gray-100" readonly />
-        <button type="button" onclick="removeRow(this)" class="text-red-600 text-xl">❌</button>
+    <!-- สรุปรายรับ/รายจ่าย -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="font-semibold text-lg">📈 รายรับ</h2>
+        <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: 0.00 บาท</p>
+        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: 0.00 บาท</p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="font-semibold text-lg">📉 รายจ่าย</h2>
+        <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: 0.00 บาท</p>
+        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: 0.00 บาท</p>
       </div>
     </div>
 
-    <!-- รวมยอดรวมบิล -->
-    <div class="mt-4 font-semibold text-right">
-      💰 รวมยอดบิล: <span id="totalSum" class="text-green-600 text-xl">0.00</span> บาท
-    </div>
-
-    <div class="flex gap-2 mt-4">
-      <button type="button" onclick="addRow()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">➕ เพิ่มรายการ</button>
-      <button type="button" onclick="submitForm()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 บันทึกข้อมูล</button>
+    <!-- เมนูหลัก -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <a href="index.html" class="bg-blue-500 text-white p-4 rounded shadow text-center hover:bg-blue-600">
+        🧾 บันทึกบิล / รายจ่าย
+      </a>
+      <a href="#" class="bg-green-500 text-white p-4 rounded shadow text-center hover:bg-green-600">
+        💵 บันทึกรายรับ / ยอดขาย
+      </a>
+      <a href="dashboard.html" class="bg-purple-500 text-white p-4 rounded shadow text-center hover:bg-purple-600">
+        📊 ดู Dashboard สรุปผล
+      </a>
     </div>
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwrDpy9OekMgNZSY5Aq0J2d2upR615tvqHqIWeUai0lr0v0Y1sIKGZcR9lxeIxZjI1k/exec";
+    // กำหนดข้อมูลจำลอง (โป้สามารถเชื่อม Google Sheets ได้ภายหลัง)
+    const exampleData = [
+      { type: 'income', date: '2025-05-01', amount: 1200 },
+      { type: 'income', date: '2025-04-15', amount: 1500 },
+      { type: 'expense', date: '2025-05-02', amount: 800 },
+      { type: 'expense', date: '2025-04-10', amount: 950 },
+    ];
 
-    function addRow() {
-      const container = document.getElementById("itemBody");
-      const row = document.createElement("div");
-      row.className = "grid grid-cols-1 sm:grid-cols-5 gap-2 items-center border p-3 rounded shadow-sm bg-gray-50 mt-2";
-      row.innerHTML = `
-        <input name="item" placeholder="รายการที่ซื้อ" class="col-span-2 border rounded px-2 py-1 w-full" required />
-        <input name="qty" type="number" placeholder="จำนวน" class="border rounded px-2 py-1 w-full" required oninput="calculateTotal(this.parentElement)" />
-        <input name="unitPrice" type="number" step="0.01" placeholder="ราคาต่อหน่วย" class="border rounded px-2 py-1 w-full" required oninput="calculateTotal(this.parentElement)" />
-        <input name="totalPrice" type="number" step="0.01" placeholder="ราคารวม" class="border rounded px-2 py-1 w-full bg-gray-100" readonly />
-        <button type="button" onclick="removeRow(this)" class="text-red-600 text-xl">❌</button>
-      `;
-      container.appendChild(row);
-    }
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonth = lastMonthDate.toISOString().slice(0, 7);
 
-    function removeRow(button) {
-      const row = button.closest(".grid");
-      row.remove();
-      updateTotalSum();
-    }
+    let incomeThisMonth = 0, incomeLastMonth = 0;
+    let expenseThisMonth = 0, expenseLastMonth = 0;
 
-    function calculateTotal(row) {
-      const qty = parseFloat(row.querySelector("input[name='qty']").value) || 0;
-      const unitPrice = parseFloat(row.querySelector("input[name='unitPrice']").value) || 0;
-      const totalField = row.querySelector("input[name='totalPrice']");
-      totalField.value = (qty * unitPrice).toFixed(2);
-      updateTotalSum();
-    }
-
-    function updateTotalSum() {
-      const totalFields = document.querySelectorAll("input[name='totalPrice']");
-      let sum = 0;
-      totalFields.forEach(input => {
-        sum += parseFloat(input.value) || 0;
-      });
-      document.getElementById("totalSum").textContent = sum.toFixed(2);
-    }
-
-    function submitForm() {
-      const date = document.getElementById("purchaseDate").value;
-      const billNo = document.getElementById("billNo").value.trim();
-
-      if (!date || !billNo) {
-        Swal.fire("กรุณากรอกวันที่และหมายเลขบิลให้ครบ");
-        return;
+    exampleData.forEach(entry => {
+      const month = entry.date.slice(0, 7);
+      if (entry.type === 'income') {
+        if (month === currentMonth) incomeThisMonth += entry.amount;
+        if (month === lastMonth) incomeLastMonth += entry.amount;
       }
-
-      const rows = document.querySelectorAll("#itemBody .grid");
-      let count = 0;
-
-      rows.forEach(row => {
-        const item = row.querySelector("input[name='item']").value;
-        const qty = row.querySelector("input[name='qty']").value;
-        const unitPrice = row.querySelector("input[name='unitPrice']").value;
-        const totalPrice = row.querySelector("input[name='totalPrice']").value;
-
-        if (!item || !qty || !unitPrice || !totalPrice) return;
-
-        const callbackName = "callback_" + Math.floor(Math.random() * 100000);
-        window[callbackName] = function(response) {
-          delete window[callbackName];
-        };
-
-        const url = `${scriptURL}?date=${encodeURIComponent(date)}&billNo=${encodeURIComponent(billNo)}&item=${encodeURIComponent(item)}&qty=${qty}&unitPrice=${unitPrice}&totalPrice=${totalPrice}&callback=${callbackName}`;
-        const script = document.createElement("script");
-        script.src = url;
-        document.body.appendChild(script);
-
-        count++;
-      });
-
-      if (count > 0) {
-        Swal.fire("สำเร็จ!", "บันทึกข้อมูลเรียบร้อยแล้ว", "success");
-        document.getElementById("purchaseDate").value = "";
-        document.getElementById("billNo").value = "";
-        document.getElementById("itemBody").innerHTML = "";
-        addRow();
-        updateTotalSum();
-      } else {
-        Swal.fire("กรุณากรอกข้อมูลสินค้าอย่างน้อย 1 รายการ");
+      if (entry.type === 'expense') {
+        if (month === currentMonth) expenseThisMonth += entry.amount;
+        if (month === lastMonth) expenseLastMonth += entry.amount;
       }
-    }
+    });
+
+    document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThisMonth.toFixed(2)} บาท`;
+    document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLastMonth.toFixed(2)} บาท`;
+    document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThisMonth.toFixed(2)} บาท`;
+    document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLastMonth.toFixed(2)} บาท`;
   </script>
 </body>
 </html>
