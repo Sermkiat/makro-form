@@ -43,7 +43,7 @@
     const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg'; // ต้องใช้ของโป้ถ้าเปิด Google Sheets API
 
     const incomeRange = 'IncomeLog!A:B';
-    const expenseRange = 'Records_bill!A:F';
+    const expenseRange = 'MakroLog!A:F';
 
     async function fetchSheet(range) {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
