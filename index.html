@@ -14,13 +14,13 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📈 รายรับ</h2>
-        <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: 0.00 บาท</p>
-        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: 0.00 บาท</p>
+        <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: กำลังโหลด...</p>
+        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📉 รายจ่าย</h2>
-        <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: 0.00 บาท</p>
-        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: 0.00 บาท</p>
+        <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: กำลังโหลด...</p>
+        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
     </div>
 
@@ -39,38 +39,52 @@
   </div>
 
   <script>
-    // กำหนดข้อมูลจำลอง (โป้สามารถเชื่อม Google Sheets ได้ภายหลัง)
-    const exampleData = [
-      { type: 'income', date: '2025-05-01', amount: 1200 },
-      { type: 'income', date: '2025-04-15', amount: 1500 },
-      { type: 'expense', date: '2025-05-02', amount: 800 },
-      { type: 'expense', date: '2025-04-10', amount: 950 },
-    ];
+    const SHEET_ID = '1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s';
+    const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg'; // ต้องใช้ของโป้ถ้าเปิด Google Sheets API
 
-    const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
-    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonth = lastMonthDate.toISOString().slice(0, 7);
+    const incomeRange = 'IncomeLog!A:B';
+    const expenseRange = 'Records_bill!A:F';
 
-    let incomeThisMonth = 0, incomeLastMonth = 0;
-    let expenseThisMonth = 0, expenseLastMonth = 0;
+    async function fetchSheet(range) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
+      const data = await res.json();
+      return data.values;
+    }
 
-    exampleData.forEach(entry => {
-      const month = entry.date.slice(0, 7);
-      if (entry.type === 'income') {
-        if (month === currentMonth) incomeThisMonth += entry.amount;
-        if (month === lastMonth) incomeLastMonth += entry.amount;
+    function calculateMonthlyTotals(rows, columnIndex) {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
+      let thisMonth = 0, prevMonth = 0;
+      rows.forEach(r => {
+        const date = r[0];
+        const val = parseFloat(r[columnIndex]);
+        if (isNaN(val)) return;
+        const month = date.slice(0, 7);
+        if (month === currentMonth) thisMonth += val;
+        else if (month === lastMonth) prevMonth += val;
+      });
+      return [thisMonth, prevMonth];
+    }
+
+    async function updateDashboard() {
+      try {
+        const incomeRows = await fetchSheet(incomeRange);
+        const [incomeThis, incomeLast] = calculateMonthlyTotals(incomeRows.slice(1), 1);
+        document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThis.toFixed(2)} บาท`;
+        document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLast.toFixed(2)} บาท`;
+
+        const expenseRows = await fetchSheet(expenseRange);
+        const [expenseThis, expenseLast] = calculateMonthlyTotals(expenseRows.slice(1), 5);
+        document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThis.toFixed(2)} บาท`;
+        document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLast.toFixed(2)} บาท`;
+      } catch (err) {
+        alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
       }
-      if (entry.type === 'expense') {
-        if (month === currentMonth) expenseThisMonth += entry.amount;
-        if (month === lastMonth) expenseLastMonth += entry.amount;
-      }
-    });
+    }
 
-    document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThisMonth.toFixed(2)} บาท`;
-    document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLastMonth.toFixed(2)} บาท`;
-    document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThisMonth.toFixed(2)} บาท`;
-    document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLastMonth.toFixed(2)} บาท`;
+    updateDashboard();
   </script>
 </body>
 </html>
