@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แดชบอร์ดสรุปรายจ่าย</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/tabletop@1.6.4/src/tabletop.js"></script>
+</head>
+<body class="bg-gray-100 font-sans p-4">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">📊 แดชบอร์ดสรุปรายจ่าย</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">💰 รายจ่ายรวมทั้งหมด</h2>
+        <p id="totalSpending" class="text-2xl text-green-600 mt-2">0.00 บาท</p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">📅 รายจ่ายรายวัน</h2>
+        <ul id="dailySpending" class="text-sm mt-2"></ul>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">🗓️ รายจ่ายรายเดือน</h2>
+        <ul id="monthlySpending" class="text-sm mt-2"></ul>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">📊 กราฟแท่ง: รายจ่ายรายวัน</h2>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">🧁 กราฟวงกลม: สัดส่วนรายการซื้อ</h2>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">🏆 สินค้าที่ซื้อบ่อย 5 อันดับ</h2>
+      <ul id="topItems" class="list-decimal ml-5 mt-2 text-sm"></ul>
+    </div>
+  </div>
+
+  <script>
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      Tabletop.init({
+        key: sheetURL,
+        simpleSheet: true,
+        callback: function(data) {
+          let total = 0;
+          const dailyMap = {};
+          const monthlyMap = {};
+          const itemMap = {};
+
+          data.forEach(row => {
+            const date = row["วันที่ซื้อ"] || row.date;
+            const item = row["รายการ"] || row.item;
+            const price = parseFloat(row["ราคารวม"] || row.totalPrice || 0);
+
+            if (!date || !item || isNaN(price)) return;
+
+            total += price;
+            dailyMap[date] = (dailyMap[date] || 0) + price;
+
+            const month = date.slice(0, 7);
+            monthlyMap[month] = (monthlyMap[month] || 0) + price;
+
+            itemMap[item] = (itemMap[item] || 0) + 1;
+          });
+
+          document.getElementById("totalSpending").textContent = total.toFixed(2) + " บาท";
+
+          // รายวัน
+          const dailyList = document.getElementById("dailySpending");
+          Object.entries(dailyMap).forEach(([date, value]) => {
+            const li = document.createElement("li");
+            li.textContent = `${date}: ${value.toFixed(2)} บาท`;
+            dailyList.appendChild(li);
+          });
+
+          // รายเดือน
+          const monthlyList = document.getElementById("monthlySpending");
+          Object.entries(monthlyMap).forEach(([month, value]) => {
+            const li = document.createElement("li");
+            li.textContent = `${month}: ${value.toFixed(2)} บาท`;
+            monthlyList.appendChild(li);
+          });
+
+          // สินค้าขายบ่อย
+          const topItems = Object.entries(itemMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+          const topList = document.getElementById("topItems");
+          topItems.forEach(([item, count]) => {
+            const li = document.createElement("li");
+            li.textContent = `${item} (${count} ครั้ง)`;
+            topList.appendChild(li);
+          });
+
+          // กราฟแท่ง
+          new Chart(document.getElementById("barChart"), {
+            type: "bar",
+            data: {
+              labels: Object.keys(dailyMap),
+              datasets: [{
+                label: "รายจ่ายรายวัน",
+                data: Object.values(dailyMap)
+              }]
+            },
+          });
+
+          // กราฟวงกลม
+          new Chart(document.getElementById("pieChart"), {
+            type: "pie",
+            data: {
+              labels: Object.keys(itemMap),
+              datasets: [{
+                label: "รายการซื้อ",
+                data: Object.values(itemMap)
+              }]
+            },
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
