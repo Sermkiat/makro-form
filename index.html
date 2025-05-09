@@ -40,7 +40,7 @@
 
   <script>
     const SHEET_ID = '1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s';
-    const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg'; // ต้องใช้ของโป้ถ้าเปิด Google Sheets API
+    const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg';
 
     const incomeRange = 'IncomeLog!A:B';
     const expenseRange = 'MakroLog!A:F';
@@ -53,15 +53,22 @@
       return data.values;
     }
 
+    function parseCurrency(val) {
+      if (!val) return 0;
+      const cleaned = val.toString().replace(/[^0-9.-]+/g, '');
+      return parseFloat(cleaned) || 0;
+    }
+
     function calculateMonthlyTotals(rows, columnIndex) {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
+      const now = new Date();
+      const currentMonth = now.toISOString().slice(0, 7);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
       let thisMonth = 0, prevMonth = 0;
       rows.forEach(r => {
         const date = r[0];
-        const val = parseFloat(r[columnIndex]);
-        if (isNaN(val)) return;
-        const month = date.slice(0, 7);
+        const val = parseCurrency(r[columnIndex]);
+        if (!date || isNaN(val)) return;
+        const month = new Date(date).toISOString().slice(0, 7);
         if (month === currentMonth) thisMonth += val;
         else if (month === lastMonth) prevMonth += val;
       });
