@@ -42,8 +42,8 @@
     const SHEET_ID = '1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s';
     const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg';
 
-    const incomeRange = 'MakroLog!I:J';
-    const expenseRange = 'MakroLog!A:F';
+    const incomeRange = 'MakroLog!L:M';
+    const expenseRange = 'MakroLog!A:J';
 
     async function fetchSheet(range) {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
