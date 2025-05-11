@@ -7,82 +7,107 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
-  <div class="max-w-2xl mx-auto p-6">
+  <div class="max-w-3xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">🧾 บันทึกบิล / รายจ่าย</h1>
+
     <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-4">
-      <div>
-        <label class="block font-medium">วันที่ซื้อ</label>
-        <input type="date" name="date" required class="w-full border p-2 rounded">
-      </div>
-      <div>
-        <label class="block font-medium">แหล่งที่ซื้อ</label>
-        <input type="text" name="source" class="w-full border p-2 rounded">
-      </div>
-      <div>
-        <label class="block font-medium">รายการที่ซื้อ</label>
-        <input type="text" name="item" class="w-full border p-2 rounded">
-      </div>
-      <div>
-        <label class="block font-medium">หมวดหมู่</label>
-        <input type="text" name="category" class="w-full border p-2 rounded">
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block font-medium">จำนวน</label>
-          <input type="number" name="qty" step="1" min="1" value="1" class="w-full border p-2 rounded" required>
-        </div>
-        <div>
-          <label class="block font-medium">ราคาต่อหน่วย</label>
-          <input type="number" name="unitPrice" step="0.01" min="0" class="w-full border p-2 rounded" required>
-        </div>
-      </div>
-      <div>
-        <label class="block font-medium">ราคารวม</label>
-        <input type="text" name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100">
-      </div>
-      <div>
-        <label class="block font-medium">หมายเหตุ</label>
-        <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
-      </div>
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        ✅ บันทึกข้อมูล
+      <div id="entryContainer"></div>
+      <button type="button" id="addRow" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+        ➕ เพิ่มรายการใหม่
       </button>
+      <div class="pt-4">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          ✅ บันทึกข้อมูลทั้งหมด
+        </button>
+      </div>
     </form>
+
+    <div class="mt-6 flex flex-wrap gap-2">
+      <a href="index.html" class="text-blue-700 underline">🔙 กลับหน้าหลัก</a>
+      <a href="dashboard.html" class="text-purple-700 underline">📊 ไปที่ Dashboard</a>
+      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?gid=0" target="_blank" class="text-green-700 underline">📄 เปิด Google Sheet</a>
+    </div>
   </div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+    const entryContainer = document.getElementById('entryContainer');
+    const addRowBtn = document.getElementById('addRow');
 
-    const form = document.getElementById('expenseForm');
-    const qtyInput = form.qty;
-    const unitInput = form.unitPrice;
-    const totalInput = form.totalPrice;
+    function createEntryRow() {
+      const div = document.createElement('div');
+      div.className = 'bg-gray-50 p-4 mb-4 border rounded space-y-4';
+      div.innerHTML = `
+        <div>
+          <label class="block font-medium">วันที่ซื้อ</label>
+          <input type="date" name="date" required class="w-full border p-2 rounded">
+        </div>
+        <div>
+          <label class="block font-medium">แหล่งที่ซื้อ</label>
+          <input type="text" name="source" class="w-full border p-2 rounded">
+        </div>
+        <div>
+          <label class="block font-medium">รายการที่ซื้อ</label>
+          <input type="text" name="item" class="w-full border p-2 rounded">
+        </div>
+        <div>
+          <label class="block font-medium">หมวดหมู่</label>
+          <input type="text" name="category" class="w-full border p-2 rounded">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-medium">จำนวน</label>
+            <input type="number" name="qty" step="1" min="1" value="1" class="w-full border p-2 rounded" required>
+          </div>
+          <div>
+            <label class="block font-medium">ราคาต่อหน่วย</label>
+            <input type="number" name="unitPrice" step="0.01" min="0" class="w-full border p-2 rounded" required>
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium">ราคารวม</label>
+          <input type="text" name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100">
+        </div>
+        <div>
+          <label class="block font-medium">หมายเหตุ</label>
+          <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
+        </div>
+      `;
+      entryContainer.appendChild(div);
 
-    function updateTotal() {
-      const qty = parseFloat(qtyInput.value) || 0;
-      const unit = parseFloat(unitInput.value) || 0;
-      totalInput.value = (qty * unit).toFixed(2);
+      const qtyInput = div.querySelector('[name="qty"]');
+      const unitInput = div.querySelector('[name="unitPrice"]');
+      const totalInput = div.querySelector('[name="totalPrice"]');
+      function updateTotal() {
+        const qty = parseFloat(qtyInput.value) || 0;
+        const unit = parseFloat(unitInput.value) || 0;
+        totalInput.value = (qty * unit).toFixed(2);
+      }
+      qtyInput.addEventListener('input', updateTotal);
+      unitInput.addEventListener('input', updateTotal);
     }
 
-    qtyInput.addEventListener('input', updateTotal);
-    unitInput.addEventListener('input', updateTotal);
+    addRowBtn.addEventListener('click', () => createEntryRow());
+    window.addEventListener('DOMContentLoaded', () => createEntryRow());
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('expenseForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      updateTotal();
+      const data = [];
+      const entries = entryContainer.querySelectorAll('div');
 
-      const data = [
-        {
-          date: form.date.value,
-          source: form.source.value,
-          item: form.item.value,
-          category: form.category.value,
-          qty: form.qty.value,
-          unitPrice: form.unitPrice.value,
-          totalPrice: form.totalPrice.value,
-          note: form.note.value
-        }
-      ];
+      entries.forEach(entry => {
+        const row = {
+          date: entry.querySelector('[name="date"]').value,
+          source: entry.querySelector('[name="source"]').value,
+          item: entry.querySelector('[name="item"]').value,
+          category: entry.querySelector('[name="category"]').value,
+          qty: entry.querySelector('[name="qty"]').value,
+          unitPrice: entry.querySelector('[name="unitPrice"]').value,
+          totalPrice: entry.querySelector('[name="totalPrice"]').value,
+          note: entry.querySelector('[name="note"]').value
+        };
+        data.push(row);
+      });
 
       const res = await fetch(scriptURL, {
         method: 'POST',
@@ -93,8 +118,7 @@
       const result = await res.json();
       if (result.status === "success") {
         alert("✅ บันทึกเรียบร้อยแล้ว");
-        form.reset();
-        totalInput.value = '';
+        location.reload();
       } else {
         alert("❌ เกิดข้อผิดพลาด: " + result.message);
       }
