@@ -1,96 +1,55 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สรุปการเงิน</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
-  <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">📋 หน้าหลัก - สรุปการเงิน</h1>
+<script>
+  const API_URL = 'https://script.google.com/macros/s/โป้วางลิงก์ Web App/exec';
 
-    <!-- สรุปรายรับ/รายจ่าย -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold text-lg">📈 รายรับ</h2>
-        <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold text-lg">📉 รายจ่าย</h2>
-        <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
-      </div>
-    </div>
+  async function fetchSheetFromScript() {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
+    const allSheets = await res.json(); // ต้องให้ Apps Script คืนเป็น { MakroLog: [...], IncomeLog: [...] }
+    return allSheets;
+  }
 
-    <!-- เมนูหลัก -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <a href="index.html" class="bg-blue-500 text-white p-4 rounded shadow text-center hover:bg-blue-600">
-        🧾 บันทึกบิล / รายจ่าย
-      </a>
-      <a href="#" class="bg-green-500 text-white p-4 rounded shadow text-center hover:bg-green-600">
-        💵 บันทึกรายรับ / ยอดขาย
-      </a>
-      <a href="dashboard.html" class="bg-purple-500 text-white p-4 rounded shadow text-center hover:bg-purple-600">
-        📊 ดู Dashboard สรุปผล
-      </a>
-    </div>
-  </div>
+  function parseCurrency(val) {
+    if (!val) return 0;
+    const cleaned = val.toString().replace(/[^0-9.-]+/g, '');
+    return parseFloat(cleaned) || 0;
+  }
 
-  <script>
-    // 🔗 วาง URL ของ Web App จาก Apps Script ที่โป้ Deploy แล้ว
-    const API_URL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+  function calculateMonthlyTotals(rows, columnIndex) {
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
+    let thisMonth = 0, prevMonth = 0;
+    rows.forEach(r => {
+      const date = r[0];
+      const val = parseCurrency(r[columnIndex]);
+      if (!date || isNaN(val)) return;
+      const month = new Date(date).toISOString().slice(0, 7);
+      if (month === currentMonth) thisMonth += val;
+      else if (month === lastMonth) prevMonth += val;
+    });
+    return [thisMonth, prevMonth];
+  }
 
-    // ดึงข้อมูลจาก Apps Script ที่คืน JSON
-    async function fetchSheetFromScript() {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
-      const data = await res.json(); // ได้เป็น array ของ rows
-      return data;
+  async function updateDashboard() {
+    try {
+      const data = await fetchSheetFromScript();
+
+      // รายรับ: IncomeLog!A:B (วันที่, ยอดขาย)
+      const incomeData = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
+      const [incomeThis, incomeLast] = calculateMonthlyTotals(incomeData, 1);
+      document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThis.toFixed(2)} บาท`;
+      document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLast.toFixed(2)} บาท`;
+
+      // รายจ่าย: MakroLog!A:G (วันที่, ราคารวม)
+      const expenseData = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
+      const [expenseThis, expenseLast] = calculateMonthlyTotals(expenseData, 1);
+      document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThis.toFixed(2)} บาท`;
+      document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLast.toFixed(2)} บาท`;
+
+    } catch (err) {
+      alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
     }
+  }
 
-    function parseCurrency(val) {
-      if (!val) return 0;
-      const cleaned = val.toString().replace(/[^0-9.-]+/g, '');
-      return parseFloat(cleaned) || 0;
-    }
-
-    function calculateMonthlyTotals(rows, columnIndex) {
-      const now = new Date();
-      const currentMonth = now.toISOString().slice(0, 7);
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
-      let thisMonth = 0, prevMonth = 0;
-      rows.forEach(r => {
-        const date = r[0];
-        const val = parseCurrency(r[columnIndex]);
-        if (!date || isNaN(val)) return;
-        const month = new Date(date).toISOString().slice(0, 7);
-        if (month === currentMonth) thisMonth += val;
-        else if (month === lastMonth) prevMonth += val;
-      });
-      return [thisMonth, prevMonth];
-    }
-
-    async function updateDashboard() {
-      try {
-        const rows = await fetchSheetFromScript();
-        const incomeData = rows.slice(1).map(r => [r[0], r[11]]); // วันที่ + ยอดขาย (คอลัมน์ L)
-        const expenseData = rows.slice(1).map(r => [r[0], r[6]]); // วันที่ + ราคารวม (คอลัมน์ G)
-
-        const [incomeThis, incomeLast] = calculateMonthlyTotals(incomeData, 1);
-        document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThis.toFixed(2)} บาท`;
-        document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLast.toFixed(2)} บาท`;
-
-        const [expenseThis, expenseLast] = calculateMonthlyTotals(expenseData, 1);
-        document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThis.toFixed(2)} บาท`;
-        document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLast.toFixed(2)} บาท`;
-      } catch (err) {
-        alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
-      }
-    }
-
-    updateDashboard();
-  </script>
-</body>
-</html>
+  updateDashboard();
+</script>
