@@ -10,11 +10,25 @@
   <div class="max-w-3xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">🧾 บันทึกบิล / รายจ่าย</h1>
 
-    <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-4">
+    <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-6">
+      <!-- ข้อมูลทั่วไป -->
+      <div class="space-y-4">
+        <div>
+          <label class="block font-medium">📅 วันที่ซื้อ</label>
+          <input type="date" name="globalDate" required class="w-full border p-2 rounded">
+        </div>
+        <div>
+          <label class="block font-medium">🏪 แหล่งที่ซื้อ</label>
+          <input type="text" name="globalSource" required class="w-full border p-2 rounded">
+        </div>
+      </div>
+
+      <!-- รายการซื้อ -->
       <div id="entryContainer"></div>
       <button type="button" id="addRow" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
         ➕ เพิ่มรายการใหม่
       </button>
+
       <div class="pt-4">
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           ✅ บันทึกข้อมูลทั้งหมด
@@ -40,47 +54,38 @@
       div.className = 'bg-gray-50 p-4 mb-4 border rounded space-y-4 relative';
 
       let html = `<div class="font-bold text-sm mb-2">📌 รายการที่ ${index + 1}</div>`;
-      if (index === 0) {
-        html += `
-          <div>
-            <label class="block font-medium">วันที่ซื้อ</label>
-            <input type="date" name="date" required class="w-full border p-2 rounded">
-          </div>
-          <div>
-            <label class="block font-medium">แหล่งที่ซื้อ</label>
-            <input type="text" name="source" class="w-full border p-2 rounded">
-          </div>`;
-      }
-
       html += `
         <div>
-          <label class="block font-medium">รายการที่ซื้อ</label>
+          <label class="block font-medium">📦 รายการที่ซื้อ</label>
           <input type="text" name="item" class="w-full border p-2 rounded" required>
         </div>
         <div>
-          <label class="block font-medium">หมวดหมู่</label>
+          <label class="block font-medium">📁 หมวดหมู่</label>
           <input type="text" name="category" class="w-full border p-2 rounded">
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block font-medium">จำนวน</label>
+            <label class="block font-medium">🔢 จำนวน</label>
             <input type="number" name="qty" step="1" min="1" value="1" class="w-full border p-2 rounded" required>
           </div>
           <div>
-            <label class="block font-medium">ราคาต่อหน่วย</label>
+            <label class="block font-medium">💰 ราคาต่อหน่วย</label>
             <input type="number" name="unitPrice" step="0.01" min="0" class="w-full border p-2 rounded" required>
           </div>
         </div>
         <div>
-          <label class="block font-medium">ราคารวม</label>
+          <label class="block font-medium">📊 ราคารวม</label>
           <input type="text" name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100">
         </div>
         <div>
-          <label class="block font-medium">หมายเหตุ</label>
+          <label class="block font-medium">📝 หมายเหตุ</label>
           <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
         </div>
-        <button type="button" class="absolute top-2 right-2 text-red-600 hover:text-red-800" onclick="this.closest('div').remove();">❌ ลบ</button>
       `;
+
+      if (index > 0) {
+        html += `<button type="button" class="absolute top-2 right-2 text-red-600 hover:text-red-800" onclick="this.closest('div').remove();">❌ ลบ</button>`;
+      }
 
       div.innerHTML = html;
       entryContainer.appendChild(div);
@@ -88,13 +93,11 @@
       const qtyInput = div.querySelector('[name="qty"]');
       const unitInput = div.querySelector('[name="unitPrice"]');
       const totalInput = div.querySelector('[name="totalPrice"]');
-
       function updateTotal() {
         const qty = parseFloat(qtyInput.value) || 0;
         const unit = parseFloat(unitInput.value) || 0;
         totalInput.value = (qty * unit).toFixed(2);
       }
-
       qtyInput.addEventListener('input', updateTotal);
       unitInput.addEventListener('input', updateTotal);
     }
@@ -104,25 +107,19 @@
 
     document.getElementById('expenseForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      const globalDate = document.querySelector('[name="globalDate"]').value;
+      const globalSource = document.querySelector('[name="globalSource"]').value;
       const data = [];
+
       const entries = entryContainer.querySelectorAll('div');
-
-      let baseDate = '', baseSource = '';
-
-      entries.forEach((entry, index) => {
-        const dateInput = entry.querySelector('[name="date"]');
-        const sourceInput = entry.querySelector('[name="source"]');
+      entries.forEach((entry) => {
         const itemInput = entry.querySelector('[name="item"]');
         if (!itemInput || itemInput.value.trim() === '') return;
 
-        if (index === 0) {
-          baseDate = dateInput?.value || '';
-          baseSource = sourceInput?.value || '';
-        }
-
         const row = {
-          date: dateInput ? dateInput.value : baseDate,
-          source: sourceInput ? sourceInput.value : baseSource,
+          date: globalDate,
+          source: globalSource,
           item: itemInput.value,
           category: entry.querySelector('[name="category"]').value,
           qty: entry.querySelector('[name="qty"]').value,
