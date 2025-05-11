@@ -42,51 +42,56 @@
     }
 
     function parseCurrency(val) {
-      if (!val) return 0;
+      if (!val && val !== 0) return 0;
       return parseFloat(val.toString().replace(/[^0-9.-]+/g,'')) || 0;
     }
 
     function formatNumber(num) {
-      return num.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+      return num.toLocaleString('en-US',{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
       });
     }
 
-    function calculateMonthlyTotals(rows, colIdx) {
+    /**
+     * คำนวณยอดรวมตามเดือนนี้และเดือนก่อน
+     * @param rows Array of [dateStr, value]
+     * @param colIdx index ของ value ในแต่ละ entry (แต่เรา map แค่ [date,value] มาแล้ว จึง colIdx=1)
+     */
+    function calculateMonthlyTotals(rows) {
       const now = new Date();
-      const currentMonth = now.toISOString().slice(0,7);
-      const lastMonth = new Date(now.getFullYear(), now.getMonth()-1,1).toISOString().slice(0,7);
-      let thisMonth = 0, prevMonth = 0;
+      // ดึงปี+เดือนปัจจุบันและเดือนก่อนโดยใช้ UTC
+      const thisYear  = now.getUTCFullYear(), thisMonth = now.getUTCMonth();
+      const prevDate  = new Date(Date.UTC(thisYear, thisMonth-1, 1));
+      const prevYear  = prevDate.getUTCFullYear(), prevMonth = prevDate.getUTCMonth();
 
-      rows.forEach(r => {
-        const dateStr = r[0];           // ใช้ r[0] = วันที่ซื้อ
-        const val     = parseCurrency(r[colIdx]);
-        if (!dateStr || isNaN(val)) return;
-
-        const month = new Date(dateStr).toISOString().slice(0,7);
-        if (month === currentMonth) thisMonth += val;
-        else if (month === lastMonth) prevMonth += val;
+      let sumThis = 0, sumPrev = 0;
+      console.log('▶ raw rows:', rows);
+      rows.forEach(([dateStr, rawVal]) => {
+        const dt = new Date(dateStr);
+        if (isNaN(dt)) return;
+        const year = dt.getUTCFullYear(), mon = dt.getUTCMonth();
+        const val = parseCurrency(rawVal);
+        if (year===thisYear && mon===thisMonth) sumThis += val;
+        else if (year===prevYear && mon===prevMonth) sumPrev += val;
       });
-
-      console.log('Expense rows:', rows);
-      console.log('ยอดรายจ่ายเดือนนี้:', thisMonth, 'เดือนก่อน:', prevMonth);
-      return [thisMonth, prevMonth];
+      console.log('✔ thisMonth:', sumThis, 'prevMonth:', sumPrev);
+      return [sumThis, sumPrev];
     }
 
     async function updateDashboard() {
       try {
         const data = await fetchData();
 
-        // === รายรับ ===
-        const incRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
-        const [iThis, iLast] = calculateMonthlyTotals(incRows, 1);
+        // ■ รายรับ: r[0]=วันที่, r[1]=ยอดขาย
+        const incRows = data.IncomeLog.slice(1).map(r=>[r[0],r[1]]);
+        const [iThis,iLast] = calculateMonthlyTotals(incRows);
         document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${formatNumber(iThis)} บาท`;
         document.getElementById('incomeLastMonth').textContent      = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
 
-        // === รายจ่าย ===
-        const expRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);  // ใช้ r[0], ไม่ใช่ r[8]
-        const [eThis, eLast] = calculateMonthlyTotals(expRows, 1);
+        // ■ รายจ่าย: r[0]=วันที่ซื้อ, r[6]=ราคารวม
+        const expRows = data.MakroLog.slice(1).map(r=>[r[0],r[6]]);
+        const [eThis,eLast] = calculateMonthlyTotals(expRows);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
         document.getElementById('expenseLastMonth').textContent      = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
 
