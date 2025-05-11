@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>สรุปการเงิน</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -41,61 +41,69 @@
   </div>
 
   <script>
-    // ► URL ของ Web App ที่คืน JSON จาก doGet()
+    // URL ของ Web App ที่คืน JSON จาก doGet()
     const API_URL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    // ► ดึงข้อมูลทั้งหมด (MakroLog + IncomeLog)
+    // ดึงข้อมูลจาก Apps Script
     async function fetchSheetFromScript() {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
       return await res.json();
     }
 
-    // ► ฟังก์ชันแปลงตัวเลข (ลบ comma, unit อื่น ๆ)
+    // แปลงข้อความให้เหลือตัวเลขล้วน
     function parseCurrency(val) {
       if (!val) return 0;
       const cleaned = val.toString().replace(/[^0-9.-]+/g, '');
       return parseFloat(cleaned) || 0;
     }
 
-    // ► คำนวณยอดรวม เดือนนี้ / เดือนก่อน
+    // ฟังก์ชัน format ใส่ comma ขั้นหลักพัน + ทศนิยม 2 ตำแหน่ง
+    function formatNumber(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // คำนวณยอดรวมของเดือนนี้และเดือนก่อน
     function calculateMonthlyTotals(rows, columnIndex) {
       const now = new Date();
-      const currentMonth = now.toISOString().slice(0,7);
-      const lastMonth = new Date(now.getFullYear(), now.getMonth()-1,1).toISOString().slice(0,7);
+      const currentMonth = now.toISOString().slice(0, 7);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        .toISOString().slice(0, 7);
       let thisMonth = 0, prevMonth = 0;
       rows.forEach(r => {
         const dateStr = r[0];
-        const num = parseCurrency(r[columnIndex]);
-        if (!dateStr || isNaN(num)) return;
-        const month = new Date(dateStr).toISOString().slice(0,7);
-        if (month === currentMonth) thisMonth += num;
-        else if (month === lastMonth) prevMonth += num;
+        const value = parseCurrency(r[columnIndex]);
+        if (!dateStr || isNaN(value)) return;
+        const month = new Date(dateStr).toISOString().slice(0, 7);
+        if (month === currentMonth) thisMonth += value;
+        else if (month === lastMonth) prevMonth += value;
       });
       return [thisMonth, prevMonth];
     }
 
+    // อัปเดตข้อมูลในหน้า
     async function updateDashboard() {
-  try {
-    const data = await fetchSheetFromScript();
+      try {
+        const data = await fetchSheetFromScript();
 
-    // รายรับ (ไม่เปลี่ยน)
-    const incomeRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
-    const [incThis, incLast] = calculateMonthlyTotals(incomeRows, 1);
-    // ... อัปเดต DOM ...
+        // รายรับ: ใช้วันที่จาก r[0], ยอดขายจาก r[1]
+        const incomeRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
+        const [incThis, incLast] = calculateMonthlyTotals(incomeRows, 1);
+        document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${formatNumber(incThis)} บาท`;
+        document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${formatNumber(incLast)} บาท`;
 
-    // รายจ่าย: ใช้วันที่ซื้อ r[0] แทน r[8]
-    const expenseRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
-    const [expThis, expLast] = calculateMonthlyTotals(expenseRows, 1);
-    document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expThis.toFixed(2)} บาท`;
-    document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expLast.toFixed(2)} บาท`;
+        // รายจ่าย: ใช้วันที่ซื้อ r[0], ราคารวม r[6]
+        const expenseRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
+        const [expThis, expLast] = calculateMonthlyTotals(expenseRows, 1);
+        document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(expThis)} บาท`;
+        document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${formatNumber(expLast)} บาท`;
 
-  } catch (err) {
-    alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
-  }
-}
+      } catch (err) {
+        alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
+      }
+    }
 
-    // เรียกทำงาน
+    // เรียกใช้งานทันที
     updateDashboard();
   </script>
 </body>
