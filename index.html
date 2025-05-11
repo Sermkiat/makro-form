@@ -39,18 +39,15 @@
   </div>
 
   <script>
-    const SHEET_ID = '1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s';
-    const API_KEY = 'AIzaSyDAMLoGeP2qWtilOBFgx1O3wSE1G8ipSAg';
+    // 🔗 วาง URL ของ Web App จาก Apps Script ที่โป้ Deploy แล้ว
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwtTiYX-N0eI1tnnZvs7wVrlQwTccl3ymuTVvgmYwE/dev';
 
-    const incomeRange = 'MakroLog! L:M';
-    const expenseRange = 'MakroLog! A:J';
-
-    async function fetchSheet(range) {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
-      const res = await fetch(url);
+    // ดึงข้อมูลจาก Apps Script ที่คืน JSON
+    async function fetchSheetFromScript() {
+      const res = await fetch(API_URL);
       if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
-      const data = await res.json();
-      return data.values;
+      const data = await res.json(); // ได้เป็น array ของ rows
+      return data;
     }
 
     function parseCurrency(val) {
@@ -77,13 +74,15 @@
 
     async function updateDashboard() {
       try {
-        const incomeRows = await fetchSheet(incomeRange);
-        const [incomeThis, incomeLast] = calculateMonthlyTotals(incomeRows.slice(1), 1);
+        const rows = await fetchSheetFromScript();
+        const incomeData = rows.slice(1).map(r => [r[0], r[11]]); // วันที่ + ยอดขาย (คอลัมน์ L)
+        const expenseData = rows.slice(1).map(r => [r[0], r[6]]); // วันที่ + ราคารวม (คอลัมน์ G)
+
+        const [incomeThis, incomeLast] = calculateMonthlyTotals(incomeData, 1);
         document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incomeThis.toFixed(2)} บาท`;
         document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incomeLast.toFixed(2)} บาท`;
 
-        const expenseRows = await fetchSheet(expenseRange);
-        const [expenseThis, expenseLast] = calculateMonthlyTotals(expenseRows.slice(1), 5);
+        const [expenseThis, expenseLast] = calculateMonthlyTotals(expenseData, 1);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expenseThis.toFixed(2)} บาท`;
         document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expenseLast.toFixed(2)} บาท`;
       } catch (err) {
