@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>สรุปการเงิน</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -9,18 +9,22 @@
 <body class="bg-gray-100 font-sans">
   <div class="max-w-3xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">📋 หน้าหลัก - สรุปการเงิน</h1>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <!-- รายรับ -->
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📈 รายรับ</h2>
         <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
+        <p id="incomeLastMonth"      class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
+      <!-- รายจ่าย -->
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📉 รายจ่าย</h2>
         <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
+        <p id="expenseLastMonth"      class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
     </div>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <a href="expense.html" class="bg-blue-500 text-white p-4 rounded shadow text-center hover:bg-blue-600">🧾 บันทึกบิล / รายจ่าย</a>
       <a href="income.html"  class="bg-green-500 text-white p-4 rounded shadow text-center hover:bg-green-600">💵 บันทึกรายรับ / ยอดขาย</a>
@@ -31,7 +35,7 @@
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    async function fetchSheet() {
+    async function fetchData() {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
       return await res.json();
@@ -39,46 +43,52 @@
 
     function parseCurrency(val) {
       if (!val) return 0;
-      return parseFloat(val.toString().replace(/[^0-9.-]+/g, '')) || 0;
+      return parseFloat(val.toString().replace(/[^0-9.-]+/g,'')) || 0;
     }
 
     function formatNumber(num) {
-      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
 
-    function calculateMonthlyTotals(rows, columnIndex) {
+    function calculateMonthlyTotals(rows, colIdx) {
       const now = new Date();
       const currentMonth = now.toISOString().slice(0,7);
-      const lastMonth    = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,7);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth()-1,1).toISOString().slice(0,7);
       let thisMonth = 0, prevMonth = 0;
+
       rows.forEach(r => {
-        const dateStr = r[0];               // ใช้ r[0] = วันที่ซื้อ
-        const val     = parseCurrency(r[columnIndex]);
+        const dateStr = r[0];           // ใช้ r[0] = วันที่ซื้อ
+        const val     = parseCurrency(r[colIdx]);
         if (!dateStr || isNaN(val)) return;
+
         const month = new Date(dateStr).toISOString().slice(0,7);
         if (month === currentMonth) thisMonth += val;
         else if (month === lastMonth) prevMonth += val;
       });
-      console.log("Expense rows:", rows);
-      console.log("This month:", thisMonth, "Last month:", prevMonth);
+
+      console.log('Expense rows:', rows);
+      console.log('ยอดรายจ่ายเดือนนี้:', thisMonth, 'เดือนก่อน:', prevMonth);
       return [thisMonth, prevMonth];
     }
 
     async function updateDashboard() {
       try {
-        const data = await fetchSheet();
+        const data = await fetchData();
 
-        // รายรับ (r[0], r[1])
-        const income = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
-        const [iThis, iLast] = calculateMonthlyTotals(income, 1);
+        // === รายรับ ===
+        const incRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
+        const [iThis, iLast] = calculateMonthlyTotals(incRows, 1);
         document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${formatNumber(iThis)} บาท`;
-        document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
+        document.getElementById('incomeLastMonth').textContent      = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
 
-        // รายจ่าย (r[0], r[6])
-        const expense = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
-        const [eThis, eLast] = calculateMonthlyTotals(expense, 1);
+        // === รายจ่าย ===
+        const expRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);  // ใช้ r[0], ไม่ใช่ r[8]
+        const [eThis, eLast] = calculateMonthlyTotals(expRows, 1);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
-        document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
+        document.getElementById('expenseLastMonth').textContent      = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
 
       } catch (err) {
         alert('❌ เกิดข้อผิดพลาด: ' + err.message);
