@@ -33,12 +33,13 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
     const entryContainer = document.getElementById('entryContainer');
     const addRowBtn = document.getElementById('addRow');
+    let entryCount = 0;
 
     function createEntryRow(index = 0) {
       const div = document.createElement('div');
-      div.className = 'bg-gray-50 p-4 mb-4 border rounded space-y-4';
+      div.className = 'bg-gray-50 p-4 mb-4 border rounded space-y-4 relative';
 
-      let html = '';
+      let html = `<div class="font-bold text-sm mb-2">📌 รายการที่ ${index + 1}</div>`;
       if (index === 0) {
         html += `
         <div>
@@ -54,7 +55,7 @@
       html += `
         <div>
           <label class="block font-medium">รายการที่ซื้อ</label>
-          <input type="text" name="item" class="w-full border p-2 rounded">
+          <input type="text" name="item" class="w-full border p-2 rounded" required>
         </div>
         <div>
           <label class="block font-medium">หมวดหมู่</label>
@@ -78,6 +79,7 @@
           <label class="block font-medium">หมายเหตุ</label>
           <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
         </div>
+        <button type="button" class="absolute top-2 right-2 text-red-600 hover:text-red-800" onclick="this.closest('div').remove();">❌ ลบ</button>
       `;
 
       div.innerHTML = html;
@@ -95,9 +97,8 @@
       unitInput.addEventListener('input', updateTotal);
     }
 
-    let entryCount = 0;
-    addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
-    window.addEventListener('DOMContentLoaded', () => createEntryRow(entryCount));
+    addRowBtn.addEventListener('click', () => createEntryRow(entryCount++));
+    window.addEventListener('DOMContentLoaded', () => createEntryRow(entryCount++));
 
     document.getElementById('expenseForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -115,10 +116,13 @@
           baseSource = sourceInput?.value || '';
         }
 
+        const itemInput = entry.querySelector('[name="item"]');
+        if (!itemInput || itemInput.value.trim() === '') return; // skip empty rows
+
         const row = {
           date: dateInput ? dateInput.value : baseDate,
           source: sourceInput ? sourceInput.value : baseSource,
-          item: entry.querySelector('[name="item"]').value,
+          item: itemInput.value,
           category: entry.querySelector('[name="category"]').value,
           qty: entry.querySelector('[name="qty"]').value,
           unitPrice: entry.querySelector('[name="unitPrice"]').value,
@@ -128,18 +132,27 @@
         data.push(row);
       });
 
-      const res = await fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
+      if (data.length === 0) {
+        alert("กรุณากรอกรายการอย่างน้อย 1 รายการ");
+        return;
+      }
 
-      const result = await res.json();
-      if (result.status === "success") {
-        alert("✅ บันทึกเรียบร้อยแล้ว");
-        location.reload();
-      } else {
-        alert("❌ เกิดข้อผิดพลาด: " + result.message);
+      try {
+        const res = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await res.json();
+        if (result.status === "success") {
+          alert("✅ บันทึกเรียบร้อยแล้ว");
+          location.reload();
+        } else {
+          alert("❌ เกิดข้อผิดพลาด: " + result.message);
+        }
+      } catch (error) {
+        alert("❌ ไม่สามารถเชื่อมต่อได้: " + error.message);
       }
     });
   </script>
