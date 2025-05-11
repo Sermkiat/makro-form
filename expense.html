@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บันทึกบิล / รายจ่าย</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">🧾 บันทึกบิล / รายจ่าย</h1>
+    <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-4">
+      <div>
+        <label class="block font-medium">วันที่ซื้อ</label>
+        <input type="date" name="date" required class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block font-medium">แหล่งที่ซื้อ</label>
+        <input type="text" name="source" class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block font-medium">รายการที่ซื้อ</label>
+        <input type="text" name="item" class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block font-medium">หมวดหมู่</label>
+        <input type="text" name="category" class="w-full border p-2 rounded">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-medium">จำนวน</label>
+          <input type="number" name="qty" step="1" min="1" value="1" class="w-full border p-2 rounded" required>
+        </div>
+        <div>
+          <label class="block font-medium">ราคาต่อหน่วย</label>
+          <input type="number" name="unitPrice" step="0.01" min="0" class="w-full border p-2 rounded" required>
+        </div>
+      </div>
+      <div>
+        <label class="block font-medium">ราคารวม</label>
+        <input type="text" name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100">
+      </div>
+      <div>
+        <label class="block font-medium">หมายเหตุ</label>
+        <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        ✅ บันทึกข้อมูล
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+
+    const form = document.getElementById('expenseForm');
+    const qtyInput = form.qty;
+    const unitInput = form.unitPrice;
+    const totalInput = form.totalPrice;
+
+    function updateTotal() {
+      const qty = parseFloat(qtyInput.value) || 0;
+      const unit = parseFloat(unitInput.value) || 0;
+      totalInput.value = (qty * unit).toFixed(2);
+    }
+
+    qtyInput.addEventListener('input', updateTotal);
+    unitInput.addEventListener('input', updateTotal);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      updateTotal();
+
+      const data = [
+        {
+          date: form.date.value,
+          source: form.source.value,
+          item: form.item.value,
+          category: form.category.value,
+          qty: form.qty.value,
+          unitPrice: form.unitPrice.value,
+          totalPrice: form.totalPrice.value,
+          note: form.note.value
+        }
+      ];
+
+      const res = await fetch(scriptURL, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await res.json();
+      if (result.status === "success") {
+        alert("✅ บันทึกเรียบร้อยแล้ว");
+        form.reset();
+        totalInput.value = '';
+      } else {
+        alert("❌ เกิดข้อผิดพลาด: " + result.message);
+      }
+    });
+  </script>
+</body>
+</html>
