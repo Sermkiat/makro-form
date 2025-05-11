@@ -90,7 +90,7 @@
         document.getElementById('incomeLastMonth').   textContent = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
 
         // รายจ่าย
-        const expRows = MakroLog.slice(1).map(r => [r[0], r[6]]);
+        const expRows = MakroLog.slice(1).map(r => [r[0], r[7]]);
         const [eThis, eLast] = calculateMonthlyTotals(expRows);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
         document.getElementById('expenseLastMonth').   textContent = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
