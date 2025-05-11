@@ -34,10 +34,13 @@
     const entryContainer = document.getElementById('entryContainer');
     const addRowBtn = document.getElementById('addRow');
 
-    function createEntryRow() {
+    function createEntryRow(index = 0) {
       const div = document.createElement('div');
       div.className = 'bg-gray-50 p-4 mb-4 border rounded space-y-4';
-      div.innerHTML = `
+
+      let html = '';
+      if (index === 0) {
+        html += `
         <div>
           <label class="block font-medium">วันที่ซื้อ</label>
           <input type="date" name="date" required class="w-full border p-2 rounded">
@@ -45,7 +48,10 @@
         <div>
           <label class="block font-medium">แหล่งที่ซื้อ</label>
           <input type="text" name="source" class="w-full border p-2 rounded">
-        </div>
+        </div>`;
+      }
+
+      html += `
         <div>
           <label class="block font-medium">รายการที่ซื้อ</label>
           <input type="text" name="item" class="w-full border p-2 rounded">
@@ -73,6 +79,8 @@
           <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
         </div>
       `;
+
+      div.innerHTML = html;
       entryContainer.appendChild(div);
 
       const qtyInput = div.querySelector('[name="qty"]');
@@ -87,18 +95,29 @@
       unitInput.addEventListener('input', updateTotal);
     }
 
-    addRowBtn.addEventListener('click', () => createEntryRow());
-    window.addEventListener('DOMContentLoaded', () => createEntryRow());
+    let entryCount = 0;
+    addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
+    window.addEventListener('DOMContentLoaded', () => createEntryRow(entryCount));
 
     document.getElementById('expenseForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = [];
       const entries = entryContainer.querySelectorAll('div');
 
-      entries.forEach(entry => {
+      let baseDate = '', baseSource = '';
+
+      entries.forEach((entry, index) => {
+        const dateInput = entry.querySelector('[name="date"]');
+        const sourceInput = entry.querySelector('[name="source"]');
+
+        if (index === 0) {
+          baseDate = dateInput?.value || '';
+          baseSource = sourceInput?.value || '';
+        }
+
         const row = {
-          date: entry.querySelector('[name="date"]').value,
-          source: entry.querySelector('[name="source"]').value,
+          date: dateInput ? dateInput.value : baseDate,
+          source: sourceInput ? sourceInput.value : baseSource,
           item: entry.querySelector('[name="item"]').value,
           category: entry.querySelector('[name="category"]').value,
           qty: entry.querySelector('[name="qty"]').value,
