@@ -13,33 +13,35 @@
     <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-6">
       <!-- วันที่ซื้อ & แหล่งที่ซื้อ -->
       <div class="space-y-4">
-        <div>
-          <label class="block font-medium">📅 วันที่ซื้อ</label>
+        <label>
+          📅 วันที่ซื้อ
           <input type="date" name="date" required class="w-full border p-2 rounded"/>
-        </div>
-        <div>
-          <label class="block font-medium">🏪 แหล่งที่ซื้อ</label>
+        </label>
+        <label>
+          🏪 แหล่งที่ซื้อ
           <input type="text" name="source" required class="w-full border p-2 rounded"/>
-        </div>
+        </label>
       </div>
 
       <!-- รายการซื้อ -->
       <div id="entryContainer"></div>
-      <button type="button" id="addRow" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+      <button type="button" id="addRow"
+              class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
         ➕ เพิ่มรายการใหม่
       </button>
 
       <div class="pt-4">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           ✅ บันทึกข้อมูลทั้งหมด
         </button>
       </div>
     </form>
 
-    <div class="mt-6 flex flex-wrap gap-3">
-      <a href="index.html" class="text-blue-700 underline">🔙 กลับหน้าหลัก</a>
+    <div class="mt-6 flex gap-4">
+      <a href="index.html"     class="text-blue-700 underline">🔙 หน้าหลัก</a>
       <a href="dashboard.html" class="text-purple-700 underline">📊 Dashboard</a>
-      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?gid=0"
+      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit"
          target="_blank" class="text-green-700 underline">📄 Google Sheet</a>
     </div>
   </div>
@@ -47,7 +49,7 @@
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    // JSONP helper (เหมือนเดิม)
+    // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
         window[cbName] = result => {
@@ -67,9 +69,9 @@
       });
     }
 
-    // สร้าง row และติด class .entry-row
+    // สร้าง row ของรายการซื้อ
     const entryContainer = document.getElementById('entryContainer');
-    const addRowBtn = document.getElementById('addRow');
+    const addRowBtn      = document.getElementById('addRow');
     let entryCount = 0;
 
     function createEntryRow(i) {
@@ -77,57 +79,70 @@
       div.className = 'entry-row bg-gray-50 p-4 mb-4 border rounded relative';
       div.innerHTML = `
         <div class="font-bold mb-2">📌 รายการที่ ${i+1}</div>
-        <label>📦 รายการที่ซื้อ<input name="item" required class="w-full border p-2 rounded"/></label>
-        <label>📁 หมวดหมู่<input name="category" class="w-full border p-2 rounded"/></label>
-        <div class="grid grid-cols-2 gap-4 mt-2">
-          <label>🔢 จำนวน<input type="number" name="qty" value="1" min="1" step="1" required class="w-full border p-2 rounded"/></label>
-          <label>💰 ราคาต่อหน่วย<input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded"/></label>
+        <label>📦 รายการที่ซื้อ
+          <input name="item" required class="w-full border p-2 rounded"/>
+        </label>
+        <label>📁 หมวดหมู่
+          <input name="category" class="w-full border p-2 rounded"/>
+        </label>
+        <div class="grid grid-cols-3 gap-4 mt-2">
+          <label>🔢 จำนวน
+            <input type="number" name="qty" value="1" min="1" step="1" required class="w-full border p-2 rounded"/>
+          </label>
+          <label>📏 หน่วย
+            <input name="unit" placeholder="เช่น ชิ้น, กิโล" class="w-full border p-2 rounded"/>
+          </label>
+          <label>💰 ราคาต่อหน่วย
+            <input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded"/>
+          </label>
         </div>
-        <label class="block mt-2">📊 ราคารวม<input name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100"/></label>
-        <label class="block mt-2">📝 หมายเหตุ<textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea></label>
+        <label class="block mt-2">📊 ราคารวม
+          <input name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100"/>
+        </label>
+        <label class="block mt-2">📝 หมายเหตุ
+          <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
+        </label>
         ${i>0?`<button type="button" class="absolute top-2 right-2 text-red-600" onclick="this.closest('.entry-row').remove()">❌</button>`:''}
       `;
       entryContainer.appendChild(div);
 
-      const qty = div.querySelector('[name="qty"]'),
-            up  = div.querySelector('[name="unitPrice"]'),
-            tp  = div.querySelector('[name="totalPrice"]');
-      function calc(){ tp.value = ((+qty.value || 0) * (+up.value || 0)).toFixed(2); }
-      qty .addEventListener('input', calc);
-      up  .addEventListener('input', calc);
+      // คำนวณราคารวมอัตโนมัติ
+      const qtyInput      = div.querySelector('[name="qty"]'),
+            unitPriceInput= div.querySelector('[name="unitPrice"]'),
+            totalInput    = div.querySelector('[name="totalPrice"]');
+      function calc() {
+        totalInput.value = ((+qtyInput.value||0) * (+unitPriceInput.value||0)).toFixed(2);
+      }
+      qtyInput.addEventListener('input', calc);
+      unitPriceInput.addEventListener('input', calc);
     }
 
     addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
     window.addEventListener('DOMContentLoaded', () => createEntryRow(entryCount));
 
-    // submit via JSONP + SweetAlert2
+    // ส่งข้อมูลผ่าน JSONP + SweetAlert2
     document.getElementById('expenseForm').addEventListener('submit', async e => {
       e.preventDefault();
+      const date   = e.target.date.value;
+      const source = e.target.source.value;
 
-      const date   = e.target.date?.value;
-      const source = e.target.source?.value;
-      if (!date || !source) {
-        Swal.fire('ผิดพลาด','กรุณาระบุวันที่และแหล่งที่ซื้อ','error');
-        return;
-      }
-
-      // เฉพาะ .entry-row เท่านั้น
       const rows = Array.from(entryContainer.querySelectorAll('.entry-row'))
         .map(div => {
-          const item  = div.querySelector('[name="item"]')?.value.trim();
+          const item  = div.querySelector('[name="item"]').value.trim();
           if (!item) return null;
           return {
             date,
             source,
             item,
-            category:   div.querySelector('[name="category"]')?.value || '',
-            qty:        div.querySelector('[name="qty"]')?.value  || '0',
-            unitPrice:  div.querySelector('[name="unitPrice"]')?.value || '0',
-            totalPrice: div.querySelector('[name="totalPrice"]')?.value || '0',
-            note:       div.querySelector('[name="note"]')?.value || ''
+            category:   div.querySelector('[name="category"]').value,
+            qty:        div.querySelector('[name="qty"]').value,
+            unit:       div.querySelector('[name="unit"]').value,      // ใหม่
+            unitPrice:  div.querySelector('[name="unitPrice"]').value,
+            totalPrice: div.querySelector('[name="totalPrice"]').value,
+            note:       div.querySelector('[name="note"]').value
           };
         })
-        .filter(r => r !== null);
+        .filter(r => r);
 
       if (!rows.length) {
         Swal.fire('ผิดพลาด','กรุณากรอกรายการอย่างน้อยหนึ่งรายการ','error');
