@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>สรุปการเงิน</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -10,30 +10,36 @@
   <div class="max-w-3xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">📋 หน้าหลัก - สรุปการเงิน</h1>
 
+    <!-- รายรับ/รายจ่าย -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <!-- รายรับ -->
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📈 รายรับ</h2>
         <p id="incomeCurrentMonth" class="text-green-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="incomeLastMonth"      class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
+        <p id="incomeLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
-      <!-- รายจ่าย -->
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-lg">📉 รายจ่าย</h2>
         <p id="expenseCurrentMonth" class="text-red-600 text-xl">เดือนนี้: กำลังโหลด...</p>
-        <p id="expenseLastMonth"      class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
+        <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
     </div>
 
+    <!-- เมนู -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <a href="expense.html" class="bg-blue-500 text-white p-4 rounded shadow text-center hover:bg-blue-600">🧾 บันทึกบิล / รายจ่าย</a>
-      <a href="income.html"  class="bg-green-500 text-white p-4 rounded shadow text-center hover:bg-green-600">💵 บันทึกรายรับ / ยอดขาย</a>
-      <a href="dashboard.html"class="bg-purple-500 text-white p-4 rounded shadow text-center hover:bg-purple-600">📊 ดู Dashboard</a>
+      <a href="expense.html" class="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 text-center">
+        🧾 บันทึกบิล / รายจ่าย
+      </a>
+      <a href="income.html" class="bg-green-500 text-white p-4 rounded shadow hover:bg-green-600 text-center">
+        💵 บันทึกรายรับ / ยอดขาย
+      </a>
+      <a href="dashboard.html" class="bg-purple-500 text-white p-4 rounded shadow hover:bg-purple-600 text-center">
+        📊 ดู Dashboard
+      </a>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+    const API_URL = 'https://script.google.com/macros/s/‹ใส่ URL exec จริง›/exec';
 
     async function fetchData() {
       const res = await fetch(API_URL);
@@ -42,58 +48,52 @@
     }
 
     function parseCurrency(val) {
-      if (!val && val !== 0) return 0;
-      return parseFloat(val.toString().replace(/[^0-9.-]+/g,'')) || 0;
+      if (val === null || val === undefined) return 0;
+      return parseFloat(val.toString().replace(/[^0-9.-]+/g, '')) || 0;
     }
 
-    function formatNumber(num) {
-      return num.toLocaleString('en-US',{
-        minimumFractionDigits:2,
-        maximumFractionDigits:2
+    function formatNumber(n) {
+      return n.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       });
     }
 
-    /**
-     * คำนวณยอดรวมตามเดือนนี้และเดือนก่อน
-     * @param rows Array of [dateStr, value]
-     * @param colIdx index ของ value ในแต่ละ entry (แต่เรา map แค่ [date,value] มาแล้ว จึง colIdx=1)
-     */
     function calculateMonthlyTotals(rows) {
       const now = new Date();
-      // ดึงปี+เดือนปัจจุบันและเดือนก่อนโดยใช้ UTC
-      const thisYear  = now.getUTCFullYear(), thisMonth = now.getUTCMonth();
-      const prevDate  = new Date(Date.UTC(thisYear, thisMonth-1, 1));
-      const prevYear  = prevDate.getUTCFullYear(), prevMonth = prevDate.getUTCMonth();
+      const thisY = now.getFullYear(), thisM = now.getMonth();
+      const prev = new Date(thisY, thisM - 1, 1);
+      const prevY = prev.getFullYear(), prevM = prev.getMonth();
 
       let sumThis = 0, sumPrev = 0;
       console.log('▶ raw rows:', rows);
-      rows.forEach(([dateStr, rawVal]) => {
+      rows.forEach(([dateStr, val]) => {
         const dt = new Date(dateStr);
-        if (isNaN(dt)) return;
-        const year = dt.getUTCFullYear(), mon = dt.getUTCMonth();
-        const val = parseCurrency(rawVal);
-        if (year===thisYear && mon===thisMonth) sumThis += val;
-        else if (year===prevYear && mon===prevMonth) sumPrev += val;
+        if (isNaN(dt)) return;  // skip if not a real date
+        const y = dt.getFullYear(), m = dt.getMonth();
+        const num = parseCurrency(val);
+        if (y === thisY && m === thisM) sumThis += num;
+        else if (y === prevY && m === prevM) sumPrev += num;
       });
-      console.log('✔ thisMonth:', sumThis, 'prevMonth:', sumPrev);
+      console.log(`✔ thisMonth=${sumThis}, prevMonth=${sumPrev}`);
       return [sumThis, sumPrev];
     }
 
     async function updateDashboard() {
       try {
-        const data = await fetchData();
+        const { IncomeLog, MakroLog } = await fetchData();
 
-        // ■ รายรับ: r[0]=วันที่, r[1]=ยอดขาย
-        const incRows = data.IncomeLog.slice(1).map(r=>[r[0],r[1]]);
-        const [iThis,iLast] = calculateMonthlyTotals(incRows);
+        // รายรับ
+        const incRows = IncomeLog.slice(1).map(r => [r[0], r[1]]);
+        const [iThis, iLast] = calculateMonthlyTotals(incRows);
         document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${formatNumber(iThis)} บาท`;
-        document.getElementById('incomeLastMonth').textContent      = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
+        document.getElementById('incomeLastMonth').   textContent = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
 
-        // ■ รายจ่าย: r[0]=วันที่ซื้อ, r[6]=ราคารวม
-        const expRows = data.MakroLog.slice(1).map(r=>[r[0],r[6]]);
-        const [eThis,eLast] = calculateMonthlyTotals(expRows);
+        // รายจ่าย
+        const expRows = MakroLog.slice(1).map(r => [r[0], r[6]]);
+        const [eThis, eLast] = calculateMonthlyTotals(expRows);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
-        document.getElementById('expenseLastMonth').textContent      = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
+        document.getElementById('expenseLastMonth').   textContent = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
 
       } catch (err) {
         alert('❌ เกิดข้อผิดพลาด: ' + err.message);
