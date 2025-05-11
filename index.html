@@ -75,27 +75,25 @@
       return [thisMonth, prevMonth];
     }
 
-    // ► อัปเดตบนหน้า
     async function updateDashboard() {
-      try {
-        const data = await fetchSheetFromScript();
+  try {
+    const data = await fetchSheetFromScript();
 
-        // — รายรับ: IncomeLog!A:B
-        const incomeRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
-        const [incThis, incLast] = calculateMonthlyTotals(incomeRows, 1);
-        document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${incThis.toFixed(2)} บาท`;
-        document.getElementById('incomeLastMonth').textContent = `เดือนก่อน: ${incLast.toFixed(2)} บาท`;
+    // รายรับ (ไม่เปลี่ยน)
+    const incomeRows = data.IncomeLog.slice(1).map(r => [r[0], r[1]]);
+    const [incThis, incLast] = calculateMonthlyTotals(incomeRows, 1);
+    // ... อัปเดต DOM ...
 
-        // — รายจ่าย: MakroLog!A:G
-        const expenseRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
-        const [expThis, expLast] = calculateMonthlyTotals(expenseRows, 1);
-        document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expThis.toFixed(2)} บาท`;
-        document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expLast.toFixed(2)} บาท`;
+    // รายจ่าย: ใช้วันที่ซื้อ r[0] แทน r[8]
+    const expenseRows = data.MakroLog.slice(1).map(r => [r[0], r[6]]);
+    const [expThis, expLast] = calculateMonthlyTotals(expenseRows, 1);
+    document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${expThis.toFixed(2)} บาท`;
+    document.getElementById('expenseLastMonth').textContent = `เดือนก่อน: ${expLast.toFixed(2)} บาท`;
 
-      } catch (err) {
-        alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
-      }
-    }
+  } catch (err) {
+    alert('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
+  }
+}v
 
     // เรียกทำงาน
     updateDashboard();
