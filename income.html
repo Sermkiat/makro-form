@@ -39,8 +39,8 @@
     // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
-        window[cbName] = (resp) => {
-          resolve(resp);
+        window[cbName] = result => {
+          resolve(result);
           delete window[cbName];
           script.remove();
         };
@@ -56,26 +56,28 @@
       });
     }
 
-    document.getElementById('incomeForm').addEventListener('submit', async (e) => {
+    document.getElementById('incomeForm').addEventListener('submit', async e => {
       e.preventDefault();
       const date   = e.target.date.value;
       const amount = e.target.amount.value;
+
       Swal.fire({
         title: 'กำลังบันทึกรายรับ...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
+
       try {
-        const cb = 'cb' + Date.now();
-        const result = await jsonp(scriptURL, { date, amount }, cb);
-        if (result.status === 'success') {
-          Swal.fire('สำเร็จ', 'บันทึกรายรับเรียบร้อย', 'success')
+        const cbName = 'cb' + Date.now();
+        const resp = await jsonp(scriptURL, { date, amount }, cbName);
+        if (resp.status === 'success') {
+          Swal.fire('สำเร็จ','บันทึกรายรับเรียบร้อย','success')
             .then(() => location.href = 'index.html');
         } else {
-          Swal.fire('ผิดพลาด', result.message || 'บันทึกไม่สำเร็จ', 'error');
+          Swal.fire('ผิดพลาด', resp.message||'ไม่สำเร็จ','error');
         }
       } catch {
-        Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อได้', 'error');
+        Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
       }
     });
   </script>
