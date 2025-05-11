@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>บันทึกรายรับ / ยอดขาย</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">💵 บันทึกรายรับ / ยอดขาย</h1>
+
+    <form id="incomeForm" class="bg-white p-6 rounded shadow space-y-4">
+      <!-- วันที่ยอดขาย -->
+      <div>
+        <label class="block font-medium">📅 วันที่</label>
+        <input type="date" name="globalDate" required class="w-full border p-2 rounded" />
+      </div>
+      <!-- ยอดขาย -->
+      <div>
+        <label class="block font-medium">💰 ยอดขาย / รายรับ</label>
+        <input type="number" name="amount" step="0.01" min="0" required class="w-full border p-2 rounded" />
+      </div>
+      <div class="pt-4">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          ✅ บันทึกรายรับ
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="index.html" class="text-blue-700 underline">🔙 กลับหน้าหลัก</a>
+      <a href="dashboard.html" class="text-purple-700 underline">📊 ไปที่ Dashboard</a>
+      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit" target="_blank" class="text-green-700 underline">📄 เปิด Google Sheet</a>
+    </div>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+
+    // ฟังก์ชันเรียก JSONP
+    function jsonpRequest(url, params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'cb_' + Date.now();
+        // สร้าง callback ที่ global
+        window[callbackName] = function(response) {
+          resolve(response);
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+        // สร้าง src พร้อม callback และพาราม
+        const query = new URLSearchParams({ ...params, callback: callbackName });
+        const script = document.createElement('script');
+        script.src = url + '?' + query.toString();
+        script.onerror = () => {
+          reject(new Error('JSONP load error'));
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    document.getElementById('incomeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const date = document.querySelector('[name="globalDate"]').value;
+      const amount = document.querySelector('[name="amount"]').value;
+
+      // แสดง SweetAlert รอ
+      Swal.fire({
+        title: 'กำลังบันทึกรายรับ...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        // ส่ง JSONP แบบ GET
+        const response = await jsonpRequest(scriptURL, { date, amount });
+        if (response.status === 'success') {
+          Swal.fire('สำเร็จ', 'บันทึกรายรับเรียบร้อย', 'success').then(() => {
+            location.href = 'index.html';
+          });
+        } else {
+          Swal.fire('ผิดพลาด', response.message || 'บันทึกไม่สำเร็จ', 'error');
+        }
+      } catch (err) {
+        Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อได้', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
