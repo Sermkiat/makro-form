@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>บันทึกรายรับประจำวัน</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -25,7 +25,6 @@
         </button>
       </div>
     </form>
-
     <div class="mt-6 flex gap-4">
       <a href="index.html"     class="text-blue-700 underline">🔙 หน้าหลัก</a>
       <a href="dashboard.html" class="text-purple-700 underline">📊 Dashboard</a>
@@ -37,21 +36,21 @@
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    // ฟังก์ชัน JSONP
-    function jsonp(url, params, callbackName) {
+    // JSONP helper
+    function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
-        window[callbackName] = function(response) {
-          resolve(response);
-          delete window[callbackName];
-          document.body.removeChild(script);
+        window[cbName] = (resp) => {
+          resolve(resp);
+          delete window[cbName];
+          script.remove();
         };
-        const query = new URLSearchParams({ ...params, callback: callbackName });
+        const q = new URLSearchParams({ ...params, callback: cbName });
         const script = document.createElement('script');
-        script.src = `${url}?${query}`;
+        script.src = `${url}?${q}`;
         script.onerror = () => {
           reject(new Error('JSONP load error'));
-          delete window[callbackName];
-          document.body.removeChild(script);
+          delete window[cbName];
+          script.remove();
         };
         document.body.appendChild(script);
       });
@@ -61,23 +60,21 @@
       e.preventDefault();
       const date   = e.target.date.value;
       const amount = e.target.amount.value;
-
       Swal.fire({
         title: 'กำลังบันทึกรายรับ...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
-
       try {
-        const cbName = 'cb' + Date.now();
-        const result = await jsonp(scriptURL, { date, amount }, cbName);
+        const cb = 'cb' + Date.now();
+        const result = await jsonp(scriptURL, { date, amount }, cb);
         if (result.status === 'success') {
           Swal.fire('สำเร็จ', 'บันทึกรายรับเรียบร้อย', 'success')
             .then(() => location.href = 'index.html');
         } else {
-          Swal.fire('ผิดพลาด', result.message || 'ไม่สำเร็จ', 'error');
+          Swal.fire('ผิดพลาด', result.message || 'บันทึกไม่สำเร็จ', 'error');
         }
-      } catch (err) {
+      } catch {
         Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อได้', 'error');
       }
     });
