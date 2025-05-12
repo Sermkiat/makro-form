@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>PangPun Dashboard</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    h1, h2 { margin-top: 1.5em; }
+    #totals p { font-size: 1.2em; }
+    canvas { max-width: 600px; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>📊 Dashboard สรุปรายรับ-รายจ่าย</h1>
+
+  <!-- สรุปรายจ่ายรวม -->
+  <div id="totals">
+    <p>รายจ่ายรวมทั้งหมด: <strong><span id="total-expenses">0</span> ฿</strong></p>
+  </div>
+
+  <!-- กราฟแท่งรายจ่ายรายวัน -->
+  <h2>กราฟรายจ่ายรายวัน</h2>
+  <canvas id="dailyChart"></canvas>
+
+  <!-- กราฟวงกลมสัดส่วนหมวดหมู่ -->
+  <h2>สัดส่วนหมวดหมู่สินค้า</h2>
+  <canvas id="categoryChart"></canvas>
+
+  <!-- สรุปรายจ่ายรายวันและรายเดือน -->
+  <h2>สรุปรายจ่ายรายวัน</h2>
+  <ul id="daily-summary"></ul>
+
+  <h2>สรุปรายจ่ายรายเดือน</h2>
+  <ul id="monthly-summary"></ul>
+
+  <!-- ตาราง Top 5 สินค้าซื้อบ่อย -->
+  <h2>Top 5 สินค้าซื้อบ่อย</h2>
+  <table id="top-items">
+    <thead>
+      <tr><th>สินค้า</th><th>จำนวนครั้ง</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  
+  <!-- โหลด Chart.js จาก CDN  [oai_citation:0‡chartjs.org](https://www.chartjs.org/docs/latest/getting-started/?utm_source=chatgpt.com) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // เปลี่ยนเป็น URL ของ Web App ที่โป้ deploy ไว้ (MakroLog)
+    const endpoint = 'https://script.google.com/macros/s/XXX/exec?sheet=MakroLog';
+
+    fetch(endpoint)
+      .then(res => res.json())   // รับ JSON จาก GAS Web App  [oai_citation:1‡Google for Developers](https://developers.google.com/apps-script/guides/web?utm_source=chatgpt.com)
+      .then(data => {
+        // data สมมติเป็น array ของ object แต่ละบรรทัดในชีท
+        // { purchaseDate, itemName, category, quantity, unitPrice, totalPrice }
+
+        // 1) คำนวณรายจ่ายรวม
+        const total = data.reduce((sum, r) => sum + parseFloat(r.totalPrice), 0);
+        document.getElementById('total-expenses').textContent = total.toLocaleString();
+
+        // 2) สรุปรายจ่ายรายวัน
+        const dailyMap = {};
+        data.forEach(r => {
+          const d = r.purchaseDate;
+          dailyMap[d] = (dailyMap[d]||0) + parseFloat(r.totalPrice);
+        });
+        const dailyLabels = Object.keys(dailyMap).sort();
+        const dailyValues = dailyLabels.map(d => dailyMap[d]);
+
+        // 3) สรุปรายจ่ายรายเดือน
+        const monthlyMap = {};
+        dailyLabels.forEach(d => {
+          const m = d.slice(0,7); // 'YYYY-MM'
+          monthlyMap[m] = (monthlyMap[m]||0) + dailyMap[d];
+        });
+
+        // 4) สรุปหมวดหมู่ (Pie Chart)
+        const categoryMap = {};
+        data.forEach(r => {
+          categoryMap[r.category] = (categoryMap[r.category]||0) + parseFloat(r.totalPrice);
+        });
+        const categoryLabels = Object.keys(categoryMap);
+        const categoryValues = categoryLabels.map(c => categoryMap[c]);
+
+        // 5) หาสินค้า Top 5 ซื้อบ่อย
+        const freq = {};
+        data.forEach(r => {
+          freq[r.itemName] = (freq[r.itemName]||0) + 1;
+        });
+        const top5 = Object.entries(freq)
+          .sort((a,b) => b[1]-a[1])
+          .slice(0,5);
+
+        // —— วาดกราฟ —— 
+        // Bar Chart รายจ่ายรายวัน
+        new Chart(document.getElementById('dailyChart'), {
+          type: 'bar',
+          data: {
+            labels: dailyLabels,
+            datasets: [{ label: '฿', data: dailyValues }]
+          }
+        });
+
+        // Pie Chart สัดส่วนหมวดหมู่
+        new Chart(document.getElementById('categoryChart'), {
+          type: 'pie',
+          data: {
+            labels: categoryLabels,
+            datasets: [{ data: categoryValues }]
+          }
+        });
+
+        // —— เติมสรุปเป็น text/table —— 
+        const dailyList = document.getElementById('daily-summary');
+        dailyLabels.forEach(d => {
+          const li = document.createElement('li');
+          li.textContent = `${d}: ${dailyMap[d].toLocaleString()} ฿`;
+          dailyList.appendChild(li);
+        });
+        const monthlyList = document.getElementById('monthly-summary');
+        Object.keys(monthlyMap).sort().forEach(m => {
+          const li = document.createElement('li');
+          li.textContent = `${m}: ${monthlyMap[m].toLocaleString()} ฿`;
+          monthlyList.appendChild(li);
+        });
+        const tbody = document.querySelector('#top-items tbody');
+        top5.forEach(([name,count]) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${name}</td><td>${count}</td>`;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(err => console.error(err));
+  </script>
+</body>
+</html>
