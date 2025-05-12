@@ -2,20 +2,20 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard สรุปรายรับ-รายจ่าย</title>
+  <title>Dashboard สรุปรายรับ–รายจ่าย</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     h1, h2, h3 { margin-top: 1.5em; }
     #totals p { font-size: 1.2em; margin: .5em 0; }
     canvas { max-width: 600px; margin: 20px 0; }
-    ul { padding-left: 1.2em; }
+    ul { padding-left: 1.2em; list-style: disc; }
+    .month-header { font-weight: bold; margin-top: .8em; list-style: none; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .month-header { font-weight: bold; margin-top: .8em; }
   </style>
 </head>
 <body>
-  <h1>📊 Dashboard สรุปรายรับ-รายจ่าย</h1>
+  <h1>📊 Dashboard สรุปรายรับ–รายจ่าย</h1>
 
   <div id="totals">
     <p>รายรับรวมทั้งหมด: <strong><span id="total-income">0</span> ฿</strong></p>
@@ -32,90 +32,91 @@
 
   <h2>สรุปรายจ่าย</h2>
   <h3>กราฟรายจ่ายรายวัน</h3>
-  <canvas id="dailyChart"></canvas>
-  <h3>กราฟสัดส่วนหมวดหมู่สินค้า</h3>
+  <canvas id="expenseDailyChart"></canvas>
+  <h3>กราฟสัดส่วนหมวดหมู่</h3>
   <canvas id="categoryChart"></canvas>
   <h3>สรุปรายจ่ายรายวัน</h3>
-  <ul id="daily-summary"></ul>
+  <ul id="expense-daily-summary"></ul>
   <h3>สรุปรายจ่ายรายเดือน</h3>
-  <ul id="monthly-summary"></ul>
-  <h3>Top 5 สินค้าซื้อบ่อย</h3>
+  <ul id="expense-monthly-summary"></ul>
+
+  <h2>Top 5 สินค้าซื้อบ่อย</h2>
   <table id="top-items">
     <thead><tr><th>สินค้า</th><th>จำนวนครั้ง</th></tr></thead>
     <tbody></tbody>
   </table>
 
-  <!-- โหลด Chart.js -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    // format dd/mm/yy
+    // แปลง 'YYYY-MM-DD' → 'dd/mm/yy'
     function formatDMY(dateKey) {
-      const [y, m, d] = dateKey.split('-');
-      return `${d.padStart(2,'0')}/${m}/${y.slice(-2)}`;
+      const [yy, mm, dd] = dateKey.split('-');
+      return `${dd}/${mm}/${yy.slice(-2)}`;
     }
 
     function renderDashboard(allData) {
-      // 1. แปลง raw income → map by dateKey (YYYY-MM-DD)
+      // --- รายรับ ---
+      // สร้าง map รายรับตามวัน (YYYY-MM-DD)
       const rawInc = allData.IncomeLog.slice(1);
       const incMap = {};
       rawInc.forEach(r => {
-        const key = new Date(r[0]).toISOString().slice(0,10);
+        const dateVal = r[0];
+        const d = new Date(dateVal);
+        if (!dateVal || isNaN(d.getTime())) return;
+        const key = d.toISOString().slice(0,10);
         incMap[key] = (incMap[key]||0) + Number(r[1]);
       });
-
-      // หาช่วงเดือน-ปี ที่มีใน incMap
-      const months = Array.from(
+      // หาชุดเดือนของรายรับ
+      const incMonths = Array.from(
         new Set(Object.keys(incMap).map(k => k.slice(0,7)))
       ).sort();
 
-      // สร้าง list ของทุกวันในแต่ละเดือน
       const incDailySummary = document.getElementById('income-daily-summary');
-      incDailySummary.innerHTML = '';  // เคลียร์ก่อน
-      const incMonthlyMap = {};
-
-      // สำหรับกราฟ รายรับรายวัน: เก็บ label + data
+      incDailySummary.innerHTML = '';
+      const incMonthlySummaryMap = {};
       const incLabels = [];
       const incValues = [];
 
-      months.forEach(month => {
-        // ใส่หัวเดือน
+      incMonths.forEach(month => {
         const [yy, mm] = month.split('-');
-        const monthHeader = document.createElement('li');
-        monthHeader.textContent = `${mm}/${yy.slice(-2)}`;
-        monthHeader.classList.add('month-header');
-        incDailySummary.appendChild(monthHeader);
+        // หัวเดือน
+        const h = document.createElement('li');
+        h.textContent = `— ${mm}/${yy.slice(-2)}`;
+        h.classList.add('month-header');
+        incDailySummary.appendChild(h);
 
-        // วันสุดท้ายของเดือน
+        // จำนวนวันในเดือน
         const lastDay = new Date(yy, mm, 0).getDate();
         for (let d = 1; d <= lastDay; d++) {
           const dd = String(d).padStart(2,'0');
-          const dateKey = `${yy}-${mm}-${dd}`;
-          const amt = incMap[dateKey] || 0;
+          const key = `${yy}-${mm}-${dd}`;
+          const amt = incMap[key] || 0;
 
           // สรุปรายวัน
           const li = document.createElement('li');
-          li.textContent = `${formatDMY(dateKey)}: ${amt.toLocaleString()} ฿`;
+          li.textContent = `${formatDMY(key)}: ${amt.toLocaleString()} ฿`;
           incDailySummary.appendChild(li);
 
-          // เก็บสรุปรายเดือน
+          // เก็บรายเดือน
           const monLabel = `${mm}/${yy.slice(-2)}`;
-          incMonthlyMap[monLabel] = (incMonthlyMap[monLabel]||0) + amt;
+          incMonthlySummaryMap[monLabel] = (incMonthlySummaryMap[monLabel]||0) + amt;
 
-          // เก็บข้อมูลกราฟ
-          incLabels.push(formatDMY(dateKey));
+          // เก็บกราฟ
+          incLabels.push(formatDMY(key));
           incValues.push(amt);
         }
       });
 
-      // แสดงยอดรวมรายรับ
+      // ยอดรวมรายรับ
       const totalInc = incValues.reduce((s,v) => s+v, 0);
       document.getElementById('total-income').textContent = totalInc.toLocaleString();
 
-      // สรุปรายรับรายเดือน
+      // สรุปรายเดือนรายรับ
       const incMonthlySummary = document.getElementById('income-monthly-summary');
-      Object.keys(incMonthlyMap).sort().forEach(mon => {
+      Object.keys(incMonthlySummaryMap).sort().forEach(mon => {
         const li = document.createElement('li');
-        li.textContent = `${mon}: ${incMonthlyMap[mon].toLocaleString()} ฿`;
+        li.textContent = `${mon}: ${incMonthlySummaryMap[mon].toLocaleString()} ฿`;
         incMonthlySummary.appendChild(li);
       });
 
@@ -125,13 +126,99 @@
         data: { labels: incLabels, datasets: [{ label: '฿', data: incValues }] }
       });
 
-      // ——————————————————————————————————————————————
-      // (ส่วนรายจ่ายไม่เปลี่ยน แต่อาจอยากใช้วิธีเดียวกันถ้าต้องการเติมวันให้ครบ)
-      // … (เก็บ expMap, expLabels, expValues, สรุปรายจ่าย ฯลฯ เหมือนเดิม) …
+      // --- รายจ่าย ---
+      const rawExp = allData.MakroLog.slice(1);
+      const expMap = {};
+      rawExp.forEach(r => {
+        const dateVal = r[0];
+        const d = new Date(dateVal);
+        if (!dateVal || isNaN(d.getTime())) return;
+        const key = d.toISOString().slice(0,10);
+        expMap[key] = (expMap[key]||0) + Number(r[7]);
+      });
+      const expMonths = Array.from(
+        new Set(Object.keys(expMap).map(k => k.slice(0,7)))
+      ).sort();
+
+      const expDailySummary = document.getElementById('expense-daily-summary');
+      expDailySummary.innerHTML = '';
+      const expMonthlySummaryMap = {};
+      const expLabels = [];
+      const expValues = [];
+
+      expMonths.forEach(month => {
+        const [yy, mm] = month.split('-');
+        const h = document.createElement('li');
+        h.textContent = `— ${mm}/${yy.slice(-2)}`;
+        h.classList.add('month-header');
+        expDailySummary.appendChild(h);
+
+        const lastDay = new Date(yy, mm, 0).getDate();
+        for (let d = 1; d <= lastDay; d++) {
+          const dd = String(d).padStart(2,'0');
+          const key = `${yy}-${mm}-${dd}`;
+          const amt = expMap[key] || 0;
+
+          const li = document.createElement('li');
+          li.textContent = `${formatDMY(key)}: ${amt.toLocaleString()} ฿`;
+          expDailySummary.appendChild(li);
+
+          const monLabel = `${mm}/${yy.slice(-2)}`;
+          expMonthlySummaryMap[monLabel] = (expMonthlySummaryMap[monLabel]||0) + amt;
+
+          expLabels.push(formatDMY(key));
+          expValues.push(amt);
+        }
+      });
+
+      const totalExp = expValues.reduce((s,v) => s+v, 0);
+      document.getElementById('total-expenses').textContent = totalExp.toLocaleString();
+
+      const expMonthlySummary = document.getElementById('expense-monthly-summary');
+      Object.keys(expMonthlySummaryMap).sort().forEach(mon => {
+        const li = document.createElement('li');
+        li.textContent = `${mon}: ${expMonthlySummaryMap[mon].toLocaleString()} ฿`;
+        expMonthlySummary.appendChild(li);
+      });
+
+      // กราฟรายจ่ายรายวัน
+      new Chart(document.getElementById('expenseDailyChart'), {
+        type: 'bar',
+        data: { labels: expLabels, datasets: [{ label: '฿', data: expValues }] }
+      });
+
+      // สัดส่วนหมวดหมู่
+      const categoryMap = {};
+      rawExp.forEach(r => {
+        const cat = r[3];
+        categoryMap[cat] = (categoryMap[cat]||0) + Number(r[7]);
+      });
+      const catLabels = Object.keys(categoryMap);
+      const catValues = catLabels.map(c => categoryMap[c]);
+      new Chart(document.getElementById('categoryChart'), {
+        type: 'pie',
+        data: { labels: catLabels, datasets: [{ data: catValues }] }
+      });
+
+      // Top 5 สินค้าซื้อบ่อย
+      const freq = {};
+      rawExp.forEach(r => {
+        const name = r[2];
+        freq[name] = (freq[name]||0) + 1;
+      });
+      const top5 = Object.entries(freq)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0,5);
+      const tbody = document.querySelector('#top-items tbody');
+      tbody.innerHTML = '';
+      top5.forEach(([name,count]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${name}</td><td>${count}</td>`;
+        tbody.appendChild(tr);
+      });
     }
   </script>
-
-  <!-- เรียก JSONP จาก GAS -->
+  <!-- รัน JSONP จาก Web App ของโป้ -->
   <script src="https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec?callback=renderDashboard"></script>
 </body>
 </html>
