@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>บันทึกบิล / รายจ่าย</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧾 บันทึกบิล / รายจ่าย</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -15,11 +15,11 @@
       <div class="space-y-4">
         <label class="block">
           📅 วันที่ซื้อ
-          <input type="date" name="date" required class="w-full border p-2 rounded"/>
+          <input type="date" name="date" required class="w-full border p-2 rounded" />
         </label>
         <label class="block">
           🏪 แหล่งที่ซื้อ
-          <input type="text" name="source" required class="w-full border p-2 rounded"/>
+          <input type="text" name="source" required class="w-full border p-2 rounded" />
         </label>
       </div>
 
@@ -43,7 +43,7 @@
     </div>
   </div>
 
-  <!-- datalist สำหรับรายการที่ซื้อ -->
+  <!-- datalist สำหรับรายการที่ซื้อ จาก marketlist sheet -->
   <datalist id="itemSuggestions"></datalist>
 
   <script>
@@ -52,36 +52,43 @@
     // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
-        window[cbName] = result => { resolve(result); delete window[cbName]; script.remove(); };
+        window[cbName] = result => { resolve(result); delete window[cbName]; };
         const query = new URLSearchParams({ ...params, callback: cbName });
         const script = document.createElement('script');
         script.src = `${url}?${query}`;
-        script.onerror = () => { reject(new Error('JSONP load error')); delete window[cbName]; script.remove(); };
+        script.onerror = () => { reject(new Error('JSONP load error')); delete window[cbName]; };
         document.body.appendChild(script);
       });
+    }
+
+    // เก็บข้อมูล marketlist
+    let marketData = [];
+
+    // โหลด marketlist จาก Google Sheets
+    async function loadMarketList() {
+      try {
+        const cbName = 'cbMarket' + Date.now();
+        const data = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
+        marketData = data.map(d => ({
+          name: d['Mettrial Name']?.trim(),
+          unit: d['Unit']?.trim(),
+          group: d['Group']?.trim()
+        }));
+        const dl = document.getElementById('itemSuggestions');
+        marketData.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.name;
+          dl.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('โหลด marketlist ไม่สำเร็จ', e);
+      }
     }
 
     // สร้าง row ของรายการซื้อ
     const entryContainer = document.getElementById('entryContainer');
     const addRowBtn = document.getElementById('addRow');
     let entryCount = 0;
-    let marketItems = [];
-
-    async function loadMarketList() {
-      try {
-        const cbName = 'cbMarket' + Date.now();
-        const data = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
-        marketItems = data.map(d => d.item.trim());
-        const dl = document.getElementById('itemSuggestions');
-        marketItems.forEach(item => {
-          const opt = document.createElement('option');
-          opt.value = item;
-          dl.appendChild(opt);
-        });
-      } catch (err) {
-        console.error('Load marketlist error:', err);
-      }
-    }
 
     function createEntryRow(i) {
       const div = document.createElement('div');
@@ -89,24 +96,24 @@
       div.innerHTML = `
         <div class="font-bold mb-2">📌 รายการที่ ${i+1}</div>
         <label>📦 รายการที่ซื้อ
-          <input name="item" list="itemSuggestions" required class="w-full border p-2 rounded"/>
+          <input name="item" list="itemSuggestions" required class="w-full border p-2 rounded" />
         </label>
         <label>📁 หมวดหมู่
-          <input name="category" class="w-full border p-2 rounded"/>
+          <input name="category" readonly class="w-full border p-2 rounded bg-gray-100" />
         </label>
         <div class="grid grid-cols-3 gap-4 mt-2">
           <label>🔢 จำนวน
-            <input type="number" name="qty" value="1" min="1" step="0.01" required class="w-full border p-2 rounded"/>
+            <input type="number" name="qty" value="1" min="0" step="0.01" required class="w-full border p-2 rounded" />
           </label>
           <label>📏 หน่วย
-            <input name="unit" placeholder="เช่น ชิ้น, กิโล" class="w-full border p-2 rounded"/>
+            <input name="unit" class="w-full border p-2 rounded bg-gray-100" readonly />
           </label>
           <label>💰 ราคาต่อหน่วย
-            <input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded"/>
+            <input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded" />
           </label>
         </div>
         <label class="block mt-2">📊 ราคารวม
-          <input name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100"/>
+          <input name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100" />
         </label>
         <label class="block mt-2">📝 หมายเหตุ
           <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
@@ -115,11 +122,10 @@
       `;
       entryContainer.appendChild(div);
 
+      // คำนวณราคารวม
       const qtyInput = div.querySelector('[name="qty"]');
       const priceInput = div.querySelector('[name="unitPrice"]');
       const totalInput = div.querySelector('[name="totalPrice"]');
-      const itemInput = div.querySelector('[name="item"]');
-
       function calc() {
         totalInput.value = ((+qtyInput.value||0) * (+priceInput.value||0)).toFixed(2);
       }
@@ -127,14 +133,22 @@
       priceInput.addEventListener('input', calc);
       calc();
 
-      // ลิสต์ market list ให้ auto-suggestion
+      // auto-fill unit + category จาก marketData
+      const itemInput = div.querySelector('[name="item"]');
       itemInput.addEventListener('input', () => {
-        const v = itemInput.value.trim();
-        // ถ้าเจอใน marketItems ก็ autofill หมวดหมู่อัตโนมัติถ้ามี
-        // สามารถเพิ่ม logic เติม category ได้ที่นี่
+        const val = itemInput.value.trim();
+        const found = marketData.find(d => d.name === val);
+        if (found) {
+          div.querySelector('[name="unit"]').value = found.unit;
+          div.querySelector('[name="category"]').value = found.group;
+        } else {
+          div.querySelector('[name="unit"]').value = '';
+          div.querySelector('[name="category"]').value = '';
+        }
       });
     }
 
+    // Event listeners
     addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
     window.addEventListener('DOMContentLoaded', () => {
       loadMarketList();
@@ -145,37 +159,35 @@
     document.getElementById('expenseForm').addEventListener('submit', async e => {
       e.preventDefault();
       const date = e.target.date.value;
-      const source = e.target.source.value;
-      const rows = Array.from(entryContainer.querySelectorAll('.entry-row'))
-        .map(div => ({
-          date,
-          source,
-          item: div.querySelector('[name="item"]').value.trim(),
-          category: div.querySelector('[name="category"]').value.trim(),
-          qty: div.querySelector('[name="qty"]').value,
-          unit: div.querySelector('[name="unit"]').value.trim(),
-          unitPrice: div.querySelector('[name="unitPrice"]').value,
-          totalPrice: div.querySelector('[name="totalPrice"]').value,
-          note: div.querySelector('[name="note"]').value.trim()
-        }))
-        .filter(r => r.item);
+      const source = e.target.source.value.trim();
+      const rows = Array.from(entryContainer.querySelectorAll('.entry-row')).map(div => ({
+        date,
+        source,
+        item: div.querySelector('[name="item"]').value.trim(),
+        category: div.querySelector('[name="category"]').value.trim(),
+        qty: div.querySelector('[name="qty"]').value,
+        unit: div.querySelector('[name="unit"]').value.trim(),
+        unitPrice: div.querySelector('[name="unitPrice"]').value,
+        totalPrice: div.querySelector('[name="totalPrice"]').value,
+        note: div.querySelector('[name="note"]').value.trim()
+      })).filter(r => r.item);
 
       if (!rows.length) {
-        Swal.fire('ผิดพลาด','กรุณากรอกรายการอย่างน้อยหนึ่งรายการ','error');
+        Swal.fire('ผิดพลาด', 'กรุณากรอกรายการอย่างน้อยหนึ่งรายการ', 'error');
         return;
       }
 
-      Swal.fire({ title:'กำลังบันทึกรายจ่าย...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      Swal.fire({ title: 'กำลังบันทึกรายจ่าย...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       try {
         const cbName = 'cb' + Date.now();
         const result = await jsonp(scriptURL, { payload: JSON.stringify(rows) }, cbName);
         if (result.status === 'success') {
-          Swal.fire('สำเร็จ','บันทึกรายจ่ายเรียบร้อย','success').then(()=>location.reload());
+          Swal.fire('สำเร็จ', 'บันทึกรายจ่ายเรียบร้อย', 'success').then(() => location.reload());
         } else {
-          Swal.fire('ผิดพลาด',result.message||'ไม่สำเร็จ','error');
+          Swal.fire('ผิดพลาด', result.message || 'ไม่สำเร็จ', 'error');
         }
       } catch {
-        Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
+        Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อได้', 'error');
       }
     });
   </script>
