@@ -3,147 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ฟอร์มใบสั่งซื้อสินค้า</title>
+  <title>บันทึกบิล / รายจ่าย</title>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
-    h2 { text-align: center; }
-    .form-row, .item-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-    .form-row input, .item-row input { flex: 1 1 150px; padding: 6px; }
-    .item-row { align-items: center; }
-    .item-row button.remove { background: #e74c3c; color: #fff; border: none; padding: 4px 8px; cursor: pointer; }
-    #add-item { margin: 10px 0; padding: 6px 12px; }
-    #submit { padding: 8px 16px; font-size: 1em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
+    body { background-color: #f5f6f8; font-family: 'Noto Sans', sans-serif; margin: 0; padding: 0; }
+    .container {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      color: #111827;
+    }
+    h1::before { content: '🧾'; margin-right: 8px; font-size: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .form-group label.icon-date::before { content: '📅'; margin-right: 8px; }
+    .form-group label.icon-supplier::before { content: '🏪'; margin-right: 8px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fafafa;
+      box-sizing: border-box;
+    }
+    input:focus, textarea:focus {
+      border-color: #3b82f6;
+      outline: none;
+      background: #ffffff;
+    }
+    .items { margin-top: 32px; }
+    .item {
+      background: #fafbfc;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .item h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      color: #111827;
+    }
+    .item h2::before { content: '📌'; margin-right: 8px; }
+    .form-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .form-row .form-group { flex: 1 1 120px; }
+    button.remove {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #ef4444;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      color: #ffffff;
+      cursor: pointer;
+    }
+    #add-item {
+      background: #fbbf24;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #submit {
+      background: #3b82f6;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 24px;
+      cursor: pointer;
+    }
+    .nav {
+      margin-top: 32px;
+      display: flex;
+      gap: 16px;
+    }
+    .nav a {
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .nav a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h2>📋 ฟอร์มใบสั่งซื้อสินค้า</h2>
+  <div class="container">
+    <h1>บันทึกบิล / รายจ่าย</h1>
 
-  <!-- หัวฟอร์ม -->
-  <div class="form-row">
-    <input type="date" id="date_bill" placeholder="วันที่บิล">
-    <input type="text" id="supplier" placeholder="ชื่อผู้ขาย (Supplier)">
-  </div>
+    <div class="form-group">
+      <label class="icon-date">วันที่ซื้อ</label>
+      <input type="date" id="date_bill">
+    </div>
+    <div class="form-group">
+      <label class="icon-supplier">แหล่งที่ซื้อ</label>
+      <input type="text" id="supplier" placeholder="ชื่อผู้ขาย">
+    </div>
 
-  <!-- รายการสินค้า -->
-  <div id="items-container">
-    <div class="item-row">
-      <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า">
-      <input type="text" class="unit" placeholder="หน่วย">
-      <input type="text" class="group" placeholder="หมวดหมู่">
-      <input type="number" class="amount" placeholder="จำนวน">
-      <input type="number" step="0.01" class="price_unit" placeholder="ราคา/หน่วย">
-      <input type="number" class="total" placeholder="รวม" readonly>
-      <button class="remove" onclick="removeRow(this)">✖</button>
+    <div class="items" id="items-container">
+      <div class="item">
+        <h2>รายการที่ 1</h2>
+        <div class="form-group">
+          <label>รายการที่ซื้อ</label>
+          <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า">
+        </div>
+        <div class="form-group">
+          <label>หมวดหมู่</label>
+          <input type="text" class="group" placeholder="หมวดหมู่สินค้า">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>จำนวน</label>
+            <input type="number" class="amount" value="1">
+          </div>
+          <div class="form-group">
+            <label>หน่วย</label>
+            <input type="text" class="unit" placeholder="เช่น ชิ้น, กิโล">
+          </div>
+          <div class="form-group">
+            <label>ราคาต่อหน่วย</label>
+            <input type="number" step="0.01" class="price_unit" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ราคารวม</label>
+          <input type="text" class="total" readonly placeholder="--">
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุ</label>
+          <textarea class="note" rows="2" placeholder="หมายเหตุเพิ่มเติม"></textarea>
+        </div>
+        <button class="remove" onclick="removeRow(this)">ลบ</button>
+      </div>
+    </div>
+
+    <button id="add-item" onclick="addItemRow()">+ เพิ่มรายการใหม่</button>
+    <button id="submit" onclick="submitData()">✅ บันทึกข้อมูลทั้งหมด</button>
+
+    <div class="nav">
+      <a href="#">◀️ หน้าแรก</a>
+      <a href="#">📊 Dashboard</a>
+      <a href="#">📄 Google Sheet</a>
     </div>
   </div>
-  <button id="add-item" onclick="addItemRow()">+ เพิ่มรายการ</button>
-
-  <button id="submit" onclick="submitData()">บันทึกข้อมูล</button>
-
-  <div id="preview"></div>
 
   <datalist id="namelist"></datalist>
-
   <script>
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
     let dataList = [];
-
-    // โหลดข้อมูล marketlist ด้วย JSONP
     function loadData() {
-      const script = document.createElement('script');
-      script.src = apiURL + '?sheet=marketlist&callback=handleData';
-      document.body.appendChild(script);
+      const s = document.createElement('script');
+      s.src = apiURL + '?sheet=marketlist&callback=handleData';
+      document.body.appendChild(s);
     }
-
     function handleData(data) {
       dataList = data;
-      const datalistEl = document.getElementById('namelist');
-      data.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
-        datalistEl.appendChild(opt);
-      });
+      const dl = document.getElementById('namelist');
+      data.forEach(i => { let o = document.createElement('option'); o.value = i.name; dl.appendChild(o); });
     }
-
-    // เพิ่ม row ใหม่
     function addItemRow() {
-      const container = document.getElementById('items-container');
-      const row = container.firstElementChild.cloneNode(true);
-      row.querySelectorAll('input').forEach(inp => inp.value = '');
-      container.appendChild(row);
+      const cont = document.getElementById('items-container');
+      const row  = cont.firstElementChild.cloneNode(true);
+      row.querySelectorAll('input, textarea').forEach(i => i.value = '');
+      cont.appendChild(row);
     }
-
-    // ลบ row
     function removeRow(btn) {
-      const rows = document.querySelectorAll('.item-row');
-      if (rows.length > 1) btn.closest('.item-row').remove();
+      const rows = document.querySelectorAll('.item');
+      if (rows.length > 1) btn.closest('.item').remove();
     }
-
-    // เติม unit/group และคำนวณ total
     document.getElementById('items-container').addEventListener('input', e => {
-      const row = e.target.closest('.item-row');
+      let row = e.target.closest('.item');
       if (e.target.classList.contains('name')) {
-        const name = e.target.value.trim();
-        const found = dataList.find(d => d.name === name);
-        if (found) {
-          row.querySelector('.unit').value = found.unit;
-          row.querySelector('.group').value = found.group;
-        }
+        let fn = dataList.find(x=>x.name===e.target.value);
+        if (fn) { row.querySelector('.unit').value = fn.unit; row.querySelector('.group').value = fn.group; }
       }
-      if (e.target.classList.contains('amount') || e.target.classList.contains('price_unit')) {
-        const amount = parseFloat(row.querySelector('.amount').value) || 0;
-        const price = parseFloat(row.querySelector('.price_unit').value) || 0;
-        row.querySelector('.total').value = (amount * price).toFixed(2);
+      if (e.target.classList.contains('amount')|| e.target.classList.contains('price_unit')) {
+        let a = parseFloat(row.querySelector('.amount').value)||0;
+        let p = parseFloat(row.querySelector('.price_unit').value)||0;
+        row.querySelector('.total').value = (a*p).toFixed(2);
       }
     });
-
-    // ส่งข้อมูลทุก row แบบ JSONP
     function submitData() {
       const dateBill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
-      const items = [];
-
-      document.querySelectorAll('.item-row').forEach(row => {
-        const name = row.querySelector('.name').value;
-        const unit = row.querySelector('.unit').value;
-        const group = row.querySelector('.group').value;
-        const amount = row.querySelector('.amount').value;
-        const price_unit = row.querySelector('.price_unit').value;
-        const total = row.querySelector('.total').value;
-        items.push({ name, unit, group, amount, price_unit, total });
-      });
-
-      // แสดง Preview
-      let html = `<h3>ตัวอย่างข้อมูลที่จะส่ง</h3>`;
-      html += `วันที่บิล: ${dateBill}<br>Supplier: ${supplier}<br><br>`;
-      html += `<table><tr><th>สินค้า</th><th>หน่วย</th><th>หมวด</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>รวม</th></tr>`;
-      items.forEach(it => {
-        html += `<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.group}</td><td>${it.amount}</td><td>${it.price_unit}</td><td>${it.total}</td></tr>`;
-      });
-      html += `</table>`;
-      document.getElementById('preview').innerHTML = html;
-
-      // ส่งข้อมูลทีละรายการ
-      items.forEach(it => {
-        const qs = `?sheet=datalog&date_bill=${encodeURIComponent(dateBill)}&supplier=${encodeURIComponent(supplier)}` +
-                   `&name=${encodeURIComponent(it.name)}&unit=${encodeURIComponent(it.unit)}` +
-                   `&group=${encodeURIComponent(it.group)}&amount=${encodeURIComponent(it.amount)}` +
-                   `&price_unit=${encodeURIComponent(it.price_unit)}&total=${encodeURIComponent(it.total)}` +
-                   `&callback=handleSubmit`;
-        const sc = document.createElement('script');
-        sc.src = apiURL + qs;
-        document.body.appendChild(sc);
+      document.querySelectorAll('.item').forEach((r,i)=>{
+        const nm= r.querySelector('.name').value;
+        const un= r.querySelector('.unit').value;
+        const gr= r.querySelector('.group').value;
+        const am= r.querySelector('.amount').value;
+        const pu= r.querySelector('.price_unit').value;
+        const to= r.querySelector('.total').value;
+        const note = r.querySelector('.note').value||'';
+        const q = `?sheet=datalog&date_bill=${encodeURIComponent(dateBill)}&supplier=${encodeURIComponent(supplier)}`+
+                  `&name=${encodeURIComponent(nm)}&unit=${encodeURIComponent(un)}`+
+                  `&group=${encodeURIComponent(gr)}&amount=${encodeURIComponent(am)}`+
+                  `&price_unit=${encodeURIComponent(pu)}&total=${encodeURIComponent(to)}`+
+                  `&note=${encodeURIComponent(note)}&callback=handleSubmit`;
+        let sc = document.createElement('script'); sc.src = apiURL+q; document.body.appendChild(sc);
       });
     }
-
-    function handleSubmit(msg) {
-      console.log('Result:', msg);
-    }
-
-    // เริ่มโหลดข้อมูล marketlist
+    function handleSubmit(msg){ console.log(msg); }
     loadData();
   </script>
 </body>
