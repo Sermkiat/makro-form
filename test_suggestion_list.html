@@ -40,8 +40,12 @@
       try {
         const cbName = 'cbMarketTest' + Date.now();
         const response = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
-        // ถ้า response ห่อ object หลาย sheet ให้เจาะเฉพาะ array ของ marketlist
-        const data = Array.isArray(response) ? response : (response.marketlist || []);
+        console.log('Response from JSONP:', response);
+        // หา array ที่มีคีย์ 'Metrial Name'
+        let data = Array.isArray(response)
+          ? response
+          : Object.values(response).find(arr => Array.isArray(arr) && arr.length && arr[0].hasOwnProperty('Metrial Name'))
+            || [];
         console.log('Marketlist data:', data);
         const dl = document.getElementById('itemSuggestions');
         data.forEach(row => {
@@ -61,4 +65,3 @@
   </script>
 </body>
 </html>
-
