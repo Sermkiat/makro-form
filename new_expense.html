@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🧾 บันทึกบิล / รายจ่าย</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -43,7 +43,7 @@
     </div>
   </div>
 
-  <!-- datalist สำหรับรายการที่ซื้อ จาก marketlist sheet -->
+  <!-- datalist สำหรับรายการที่ซื้อจาก marketlist sheet -->
   <datalist id="itemSuggestions"></datalist>
 
   <script>
@@ -52,11 +52,19 @@
     // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
-        window[cbName] = result => { resolve(result); delete window[cbName]; };
-        const query = new URLSearchParams({ ...params, callback: cbName });
         const script = document.createElement('script');
+        window[cbName] = data => {
+          resolve(data);
+          delete window[cbName];
+          document.body.removeChild(script);
+        };
+        const query = new URLSearchParams({ ...params, callback: cbName });
         script.src = `${url}?${query}`;
-        script.onerror = () => { reject(new Error('JSONP load error')); delete window[cbName]; };
+        script.onerror = () => {
+          reject(new Error('JSONP load error'));
+          delete window[cbName];
+          document.body.removeChild(script);
+        };
         document.body.appendChild(script);
       });
     }
@@ -69,6 +77,7 @@
       try {
         const cbName = 'cbMarket' + Date.now();
         const data = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
+        console.log('marketlist data:', data);
         marketData = data.map(d => ({
           name: d['Mettrial Name']?.trim(),
           unit: d['Unit']?.trim(),
@@ -106,7 +115,7 @@
             <input type="number" name="qty" value="1" min="0" step="0.01" required class="w-full border p-2 rounded" />
           </label>
           <label>📏 หน่วย
-            <input name="unit" class="w-full border p-2 rounded bg-gray-100" readonly />
+            <input name="unit" readonly class="w-full border p-2 rounded bg-gray-100" />
           </label>
           <label>💰 ราคาต่อหน่วย
             <input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded" />
@@ -135,23 +144,25 @@
 
       // auto-fill unit + category จาก marketData
       const itemInput = div.querySelector('[name="item"]');
+      const unitInput = div.querySelector('[name="unit"]');
+      const catInput = div.querySelector('[name="category"]');
       itemInput.addEventListener('input', () => {
         const val = itemInput.value.trim();
         const found = marketData.find(d => d.name === val);
         if (found) {
-          div.querySelector('[name="unit"]').value = found.unit;
-          div.querySelector('[name="category"]').value = found.group;
+          unitInput.value = found.unit;
+          catInput.value = found.group;
         } else {
-          div.querySelector('[name="unit"]').value = '';
-          div.querySelector('[name="category"]').value = '';
+          unitInput.value = '';
+          catInput.value = '';
         }
       });
     }
 
     // Event listeners
     addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
-    window.addEventListener('DOMContentLoaded', () => {
-      loadMarketList();
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadMarketList();
       createEntryRow(entryCount);
     });
 
