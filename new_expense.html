@@ -26,14 +26,12 @@
 
       <!-- รายการซื้อ -->
       <div id="entryContainer"></div>
-      <button type="button" id="addRow"
-              class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+      <button type="button" id="addRow" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
         ➕ เพิ่มรายการใหม่
       </button>
 
       <div class="pt-4">
-        <button type="submit"
-                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           ✅ บันทึกข้อมูลทั้งหมด
         </button>
       </div>
@@ -42,8 +40,7 @@
     <div class="mt-6 flex gap-4">
       <a href="index.html"     class="text-blue-700 underline">🔙 หน้าหลัก</a>
       <a href="dashboard.html" class="text-purple-700 underline">📊 Dashboard</a>
-      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit"
-         target="_blank" class="text-green-700 underline">📄 Google Sheet</a>
+      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit" target="_blank" class="text-green-700 underline">📄 Google Sheet</a>
     </div>
   </div>
 
@@ -57,71 +54,38 @@
     // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
-        window[cbName] = result => {
-          resolve(result);
-          delete window[cbName];
-          script.remove();
-        };
+        window[cbName] = result => { resolve(result); delete window[cbName]; script.parentNode.removeChild(script); };
         const query = new URLSearchParams({ ...params, callback: cbName });
         const script = document.createElement('script');
         script.src = `${url}?${query}`;
-        script.onerror = () => {
-          reject(new Error('JSONP load error'));
-          delete window[cbName];
-          script.remove();
-        };
+        script.onerror = () => { reject(new Error('JSONP load error')); delete window[cbName]; script.parentNode.removeChild(script); };
         document.body.appendChild(script);
       });
     }
 
-    let marketList = [];
+    let marketItems = [];
     const entryContainer = document.getElementById('entryContainer');
     const addRowBtn      = document.getElementById('addRow');
     let entryCount = 0;
 
-    // Load source history
-    const sourceDL = document.getElementById('sourceSuggestions');
-    const srcHist = JSON.parse(localStorage.getItem('sourceHistory') || '[]');
-    srcHist.forEach(s => {
-      const o = document.createElement('option'); o.value = s;
-      sourceDL.appendChild(o);
-    });
-    document.querySelector('input[name="source"]').addEventListener('change', e => {
-      const v = e.target.value.trim();
-      if (!v) return;
-      const arr = JSON.parse(localStorage.getItem('sourceHistory') || '[]');
-      if (!arr.includes(v)) {
-        arr.push(v);
-        localStorage.setItem('sourceHistory', JSON.stringify(arr));
-        const o = document.createElement('option'); o.value = v;
-        sourceDL.appendChild(o);
-      }
-    });
-
-    // Load market list for items/categories
-    window.addEventListener('DOMContentLoaded', async () => {
+    // โหลดรายการซื้อจาก Google Sheets (MarketList)
+    async function loadMarketItems() {
       try {
         const cbName = 'cbMarket' + Date.now();
         const data = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
-        marketList = data.map(d => ({
-          key: d.item.trim().toLowerCase(),
-          display: d.item.trim(),
-          category: d.category.trim()
-        }));
+        marketItems = data.map(d => d.item.trim());
         const dl = document.getElementById('itemSuggestions');
-        marketList.forEach(d => {
+        marketItems.forEach(item => {
           const opt = document.createElement('option');
-          opt.value = d.display;
+          opt.value = item;
           dl.appendChild(opt);
         });
       } catch (err) {
-        console.error('Load market list failed', err);
+        console.error('Load MarketList failed', err);
       }
+    }
 
-      // Initialize first row
-      createEntryRow(entryCount);
-    });
-
+    // สร้างแถวรายการซื้อ
     function createEntryRow(i) {
       const div = document.createElement('div');
       div.className = 'entry-row bg-gray-50 p-4 mb-4 border rounded relative';
@@ -154,10 +118,10 @@
       `;
       entryContainer.appendChild(div);
 
-      // calculate total
-      const qtyInput       = div.querySelector('[name="qty"]'),
-            priceInput     = div.querySelector('[name="unitPrice"]'),
-            totalInput     = div.querySelector('[name="totalPrice"]');
+      // คำนวณราคารวม
+      const qtyInput  = div.querySelector('[name="qty"]');
+      const priceInput= div.querySelector('[name="unitPrice"]');
+      const totalInput= div.querySelector('[name="totalPrice"]');
       function calc() {
         totalInput.value = ((+qtyInput.value||0) * (+priceInput.value||0)).toFixed(2);
       }
@@ -165,84 +129,37 @@
       priceInput.addEventListener('input', calc);
       calc();
 
-      // item auto-fill category
-      const itemInput = div.querySelector('[name="item"]');
-      itemInput.addEventListener('input', e => {
-        const key = e.target.value.trim().toLowerCase();
-        const found = marketList.find(m => m.key === key);
-        div.querySelector('[name="category"]').value = found ? found.category : '';
-      });
-
-      // unit history
-      const unitDL = document.getElementById('unitSuggestions');
-      const unitInput = div.querySelector('[name="unit"]');
-      unitInput.addEventListener('change', () => {
-        const v = unitInput.value.trim();
-        if (!v) return;
-        const arr = JSON.parse(localStorage.getItem('unitHistory')||'[]');
-        if (!arr.includes(v)) {
-          arr.push(v);
-          localStorage.setItem('unitHistory', JSON.stringify(arr));
-          const o = document.createElement('option'); o.value = v;
-          unitDL.appendChild(o);
-        }
-      });
+      // ถ้าต้องการเอา auto-fill หมวดหมู่ ต่อที่นี่
     }
 
+    // Event listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      loadMarketItems();
+      createEntryRow(entryCount);
+    });
     addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
 
-    // Submit with preview
+    // ส่งข้อมูลผ่าน JSONP + SweetAlert2
     document.getElementById('expenseForm').addEventListener('submit', async e => {
       e.preventDefault();
       const date   = e.target.date.value;
-      const source = e.target.source.value.trim().toLowerCase();
-      const rows = Array.from(entryContainer.querySelectorAll('.entry-row')).map(div => {
-        const itemRaw = div.querySelector('[name="item"]').value;
-        const item    = itemRaw.trim().toLowerCase();
-        if (!item) return null;
-        return {
-          date,
-          source,
-          item,
-          category:       div.querySelector('[name="category"]').value.trim(),
-          qty:            div.querySelector('[name="qty"]').value,
-          unit:           div.querySelector('[name="unit"]').value.trim().toLowerCase(),
-          unitPrice:      div.querySelector('[name="unitPrice"]').value,
-          totalPrice:     div.querySelector('[name="totalPrice"]').value,
-          note:           div.querySelector('[name="note"]').value.trim()
-        };
-      }).filter(r=>r);
+      const source = e.target.source.value;
+      const rows = Array.from(entryContainer.querySelectorAll('.entry-row')).map(div => ({
+        date,
+        source,
+        item:       div.querySelector('[name="item"]').value.trim(),
+        category:   div.querySelector('[name="category"]').value.trim(),
+        qty:        div.querySelector('[name="qty"]').value,
+        unit:       div.querySelector('[name="unit"]').value.trim(),
+        unitPrice:  div.querySelector('[name="unitPrice"]').value,
+        totalPrice: div.querySelector('[name="totalPrice"]').value,
+        note:       div.querySelector('[name="note"]').value.trim()
+      })).filter(r=>r.item);
 
       if (!rows.length) {
         Swal.fire('ผิดพลาด','กรุณากรอกรายการอย่างน้อยหนึ่งรายการ','error');
         return;
       }
-
-      // Preview
-      const previewHtml = rows.map((r,i) => `
-        <div class="border-b pb-2 mb-2 text-sm text-left">
-          <p><strong>รายการ ${i+1}</strong></p>
-          <p>วันที่: ${r.date}</p>
-          <p>แหล่ง: ${r.source}</p>
-          <p>สินค้า: ${r.item} (${r.category})</p>
-          <p>จำนวน: ${r.qty} ${r.unit}</p>
-          <p>ราคาต่อหน่วย: ${r.unitPrice}</p>
-          <p>ราคารวม: ${r.totalPrice}</p>
-          <p>หมายเหตุ: ${r.note}</p>
-        </div>
-      `).join('');
-
-      const confirm = await Swal.fire({
-        title: 'ตรวจสอบข้อมูลก่อนบันทึก',
-        html: `<div style="max-height:400px;overflow:auto">${previewHtml}</div>`,
-        width: 600,
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยัน',
-        cancelButtonText: 'แก้ไข',
-        customClass: { htmlContainer: 'text-gray-800' }
-      });
-
-      if (!confirm.isConfirmed) return;
 
       Swal.fire({ title:'กำลังบันทึกรายจ่าย...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
       try {
@@ -251,33 +168,12 @@
         if (result.status === 'success') {
           Swal.fire('สำเร็จ','บันทึกรายจ่ายเรียบร้อย','success').then(()=>location.reload());
         } else {
-          Swal.fire('ผิดพลาด', result.message||'ไม่สำเร็จ','error');
+          Swal.fire('ผิดพลาด', result.message || 'ไม่สำเร็จ','error');
         }
       } catch {
         Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
       }
     });
-
-    // Delete row (by index)
-    function deleteRow(rowIdx) {
-      const cbName = 'cbDel' + Date.now();
-      jsonp(scriptURL, { action:'delete', row: rowIdx }, cbName)
-        .then(res => {
-          if (res.status==='success') Swal.fire('ลบแล้ว','ลบข้อมูลเรียบร้อย','success').then(()=>location.reload());
-          else Swal.fire('ผิดพลาด', res.message,'error');
-        });
-    }
-
-    // Update row
-    function updateRow(rowIdx, newData) {
-      const params = { action:'update', row: rowIdx, ...newData };
-      const cbName = 'cbUpd' + Date.now();
-      jsonp(scriptURL, params, cbName)
-        .then(res => {
-          if (res.status==='success') Swal.fire('อัปเดตแล้ว','ปรับปรุงข้อมูลเรียบร้อย','success').then(()=>location.reload());
-          else Swal.fire('ผิดพลาด', res.message,'error');
-        });
-    }
   </script>
 </body>
 </html>
