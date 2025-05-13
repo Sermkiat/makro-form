@@ -2,105 +2,49 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ทดลองกรอกชื่อสินค้า (Marketlist) แบบ Custom Suggestion</title>
+  <title>ทดลองกรอกชื่อสินค้า (Marketlist)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-8 font-sans">
-  <div class="max-w-md mx-auto bg-white p-6 rounded shadow relative">
+  <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
     <h1 class="text-xl font-bold mb-4">🔍 ทดลองกรอกชื่อสินค้า<br><small>(ดึงจาก Marketlist)</small></h1>
-    <label class="block mb-2 relative">
+    <label class="block mb-2">
       📦 รายการที่ซื้อ:
-      <input id="itemInput" autocomplete="off" class="w-full p-2 border rounded" placeholder="เริ่มพิมพ์ชื่อ..." />
-      <!-- กล่อง suggestion -->
-      <ul id="suggestions" class="absolute z-10 top-full left-0 right-0 bg-white border border-gray-300 rounded mt-1 max-h-40 overflow-auto hidden"></ul>
+      <input id="itemInput" list="itemSuggestions" class="w-full p-2 border rounded" placeholder="เริ่มพิมพ์ชื่อ..." />
     </label>
+    <datalist id="itemSuggestions"></datalist>
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+    // URL Web App (exec)
+    const scriptURL = 'https://script.google.com/macros/s/AKfycby…/exec';
 
-    function jsonp(url, params, cbName) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        window[cbName] = data => {
-          resolve(data);
-          delete window[cbName];
-          document.body.removeChild(script);
-        };
-        const query = new URLSearchParams({ ...params, callback: cbName });
-        script.src = `${url}?${query}`;
-        script.onerror = () => {
-          reject(new Error('JSONP load error'));
-          delete window[cbName];
-          document.body.removeChild(script);
-        };
-        document.body.appendChild(script);
-      });
-    }
-
-    let marketData = [];
     async function loadMarketItems() {
-      try {
-        const cbName = 'cbMarket' + Date.now();
-        const response = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
-        // ดึง array
-        const data = Array.isArray(response)
-          ? response
-          : (response.marketlist || []);
-        // เก็บเฉพาะ field ชื่อใหม่
-        marketData = data.map(r => ({
-          name: r['MetrialName']?.trim() || ''
-        }));
-        console.log('Marketlist loaded:', marketData);
-      } catch (err) {
-        console.error('โหลด marketlist ไม่สำเร็จ', err);
-      }
-    }
+      // ดึง JSON ตรงๆ ไม่ต้อง callback
+      const res = await fetch(`${scriptURL}?sheet=marketlist`);
+      if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+      const wrapped = await res.json();
+      // wrapped อาจเป็น array เลย หรือ object { marketlist: [...] }
+      const data = Array.isArray(wrapped)
+        ? wrapped
+        : (wrapped.marketlist || []);
+      console.log('Marketlist data:', data);
 
-    function showSuggestions(list) {
-      const ul = document.getElementById('suggestions');
-      ul.innerHTML = '';
-      if (!list.length) {
-        ul.classList.add('hidden');
-        return;
-      }
-      list.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.name;
-        li.className = 'px-2 py-1 hover:bg-gray-200 cursor-pointer';
-        li.addEventListener('click', () => {
-          document.getElementById('itemInput').value = item.name;
-          ul.classList.add('hidden');
-        });
-        ul.appendChild(li);
-      });
-      ul.classList.remove('hidden');
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadMarketItems();
-      const input = document.getElementById('itemInput');
-      const delay = 200;
-      let timer;
-      input.addEventListener('input', () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          const v = input.value.trim().toLowerCase();
-          if (!v) {
-            showSuggestions([]);
-            return;
-          }
-          const matches = marketData.filter(item =>
-            item.name.toLowerCase().includes(v)
-          ).slice(0, 10);
-          showSuggestions(matches);
-        }, delay);
-      });
-      document.addEventListener('click', e => {
-        if (!e.target.closest('#itemInput') && !e.target.closest('#suggestions')) {
-          document.getElementById('suggestions').classList.add('hidden');
+      const dl = document.getElementById('itemSuggestions');
+      dl.innerHTML = '';
+      data.forEach(row => {
+        // ชื่อต้องตรงกับ header ในชีต: MetrialName
+        const name = row['MetrialName'];
+        if (name) {
+          const opt = document.createElement('option');
+          opt.value = name.trim();
+          dl.appendChild(opt);
         }
       });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMarketItems().catch(err => console.error(err));
     });
   </script>
 </body>
