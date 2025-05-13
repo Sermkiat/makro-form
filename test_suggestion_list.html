@@ -2,19 +2,18 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ฟอร์มทดลอง</title>
+  <title>ทดลองกรอกชื่อสินค้า (Marketlist)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-10 font-sans">
-  <div class="max-w-xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-xl font-bold mb-4">🔍 ทดลองกรอกชื่อสินค้า (จาก Marketlist)</h1>
+<body class="bg-gray-100 p-8 font-sans">
+  <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-xl font-bold mb-4">🔍 ทดลองกรอกชื่อสินค้า<br><small>(ดึงจาก Marketlist)</small></h1>
     <label class="block mb-2">
       📦 รายการที่ซื้อ:
       <input id="itemInput" list="itemSuggestions" class="w-full p-2 border rounded" placeholder="เริ่มพิมพ์ชื่อ..." />
     </label>
     <datalist id="itemSuggestions"></datalist>
   </div>
-
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
@@ -40,19 +39,21 @@
     async function loadMarketItems() {
       try {
         const cbName = 'cbMarketTest' + Date.now();
-        const data = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
-        console.log('Marketlist:', data);
-
+        const response = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
+        // ถ้า response ห่อ object หลาย sheet ให้เจาะเฉพาะ array ของ marketlist
+        const data = Array.isArray(response) ? response : (response.marketlist || []);
+        console.log('Marketlist data:', data);
         const dl = document.getElementById('itemSuggestions');
         data.forEach(row => {
-          if (row['Metrial Name']) {
-            const option = document.createElement('option');
-            option.value = row['Metrial Name'].trim();
-            dl.appendChild(option);
+          const name = row['Metrial Name']?.trim();
+          if (name) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            dl.appendChild(opt);
           }
         });
       } catch (err) {
-        console.error('โหลดข้อมูลไม่สำเร็จ:', err);
+        console.error('โหลดข้อมูล marketlist ไม่สำเร็จ:', err);
       }
     }
 
@@ -60,3 +61,4 @@
   </script>
 </body>
 </html>
+
