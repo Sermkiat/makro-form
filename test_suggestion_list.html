@@ -44,12 +44,12 @@
         // หา array ที่มีคีย์ 'Metrial Name'
         let data = Array.isArray(response)
           ? response
-          : Object.values(response).find(arr => Array.isArray(arr) && arr.length && arr[0].hasOwnProperty('Metrial Name'))
+          : Object.values(response).find(arr => Array.isArray(arr) && arr.length && arr[0].hasOwnProperty('MetrialName'))
             || [];
         console.log('Marketlist data:', data);
         const dl = document.getElementById('itemSuggestions');
         data.forEach(row => {
-          const name = row['Metrial Name']?.trim();
+          const name = row['MetrialName']?.trim();
           if (name) {
             const opt = document.createElement('option');
             opt.value = name;
