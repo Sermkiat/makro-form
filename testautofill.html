@@ -1,30 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ฟอร์ม Auto Fill ด้วย JSONP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มใบสั่งซื้อสินค้า</title>
   <style>
-    input, button { margin: 6px; padding: 8px; width: 240px; }
+    body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+    h2 { text-align: center; }
+    .form-row, .item-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .form-row input, .item-row input { flex: 1 1 150px; padding: 6px; }
+    .item-row { align-items: center; }
+    .item-row button.remove { background: #e74c3c; color: #fff; border: none; padding: 4px 8px; cursor: pointer; }
+    #add-item { margin: 10px 0; padding: 6px 12px; }
+    #submit { padding: 8px 16px; font-size: 1em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
   </style>
 </head>
 <body>
-  <h2>📋 ฟอร์มรายการสินค้า</h2>
+  <h2>📋 ฟอร์มใบสั่งซื้อสินค้า</h2>
 
-  <input type="text" id="name" list="namelist" placeholder="ชื่อสินค้า">
-  <datalist id="namelist"></datalist><br>
+  <!-- หัวฟอร์ม -->
+  <div class="form-row">
+    <input type="date" id="date_bill" placeholder="วันที่บิล">
+    <input type="text" id="supplier" placeholder="ชื่อผู้ขาย (Supplier)">
+  </div>
 
-  <input type="text" id="unit" placeholder="หน่วย" readonly><br>
-  <input type="text" id="group" placeholder="หมวดหมู่" readonly><br>
+  <!-- รายการสินค้า -->
+  <div id="items-container">
+    <div class="item-row">
+      <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า">
+      <input type="text" class="unit" placeholder="หน่วย">
+      <input type="text" class="group" placeholder="หมวดหมู่">
+      <input type="number" class="amount" placeholder="จำนวน">
+      <input type="number" step="0.01" class="price_unit" placeholder="ราคา/หน่วย">
+      <input type="number" class="total" placeholder="รวม" readonly>
+      <button class="remove" onclick="removeRow(this)">✖</button>
+    </div>
+  </div>
+  <button id="add-item" onclick="addItemRow()">+ เพิ่มรายการ</button>
 
-  <button onclick="submitData()">บันทึก</button>
+  <button id="submit" onclick="submitData()">บันทึกข้อมูล</button>
 
   <div id="preview"></div>
+
+  <datalist id="namelist"></datalist>
 
   <script>
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
     let dataList = [];
 
-    // 📥 โหลดข้อมูลผ่าน JSONP
+    // โหลดข้อมูล marketlist ด้วย JSONP
     function loadData() {
       const script = document.createElement('script');
       script.src = apiURL + '?sheet=marketlist&callback=handleData';
@@ -33,46 +60,90 @@
 
     function handleData(data) {
       dataList = data;
-      const datalist = document.getElementById('namelist');
+      const datalistEl = document.getElementById('namelist');
       data.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.name;
-        datalist.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        datalistEl.appendChild(opt);
       });
     }
 
-    // 🔄 เติม unit/group เมื่อเลือกชื่อ
-    document.getElementById('name').addEventListener('input', function () {
-      const name = this.value.trim();
-      const found = dataList.find(d => d.name === name);
-      if (found) {
-        document.getElementById('unit').value = found.unit || '';
-        document.getElementById('group').value = found.group || '';
+    // เพิ่ม row ใหม่
+    function addItemRow() {
+      const container = document.getElementById('items-container');
+      const row = container.firstElementChild.cloneNode(true);
+      row.querySelectorAll('input').forEach(inp => inp.value = '');
+      container.appendChild(row);
+    }
+
+    // ลบ row
+    function removeRow(btn) {
+      const rows = document.querySelectorAll('.item-row');
+      if (rows.length > 1) btn.closest('.item-row').remove();
+    }
+
+    // เติม unit/group และคำนวณ total
+    document.getElementById('items-container').addEventListener('input', e => {
+      const row = e.target.closest('.item-row');
+      if (e.target.classList.contains('name')) {
+        const name = e.target.value.trim();
+        const found = dataList.find(d => d.name === name);
+        if (found) {
+          row.querySelector('.unit').value = found.unit;
+          row.querySelector('.group').value = found.group;
+        }
+      }
+      if (e.target.classList.contains('amount') || e.target.classList.contains('price_unit')) {
+        const amount = parseFloat(row.querySelector('.amount').value) || 0;
+        const price = parseFloat(row.querySelector('.price_unit').value) || 0;
+        row.querySelector('.total').value = (amount * price).toFixed(2);
       }
     });
 
-    // 📤 ส่งข้อมูลแบบ JSONP
+    // ส่งข้อมูลทุก row แบบ JSONP
     function submitData() {
-      const name = document.getElementById('name').value;
-      const unit = document.getElementById('unit').value;
-      const group = document.getElementById('group').value;
+      const dateBill = document.getElementById('date_bill').value;
+      const supplier = document.getElementById('supplier').value;
+      const items = [];
 
-      document.getElementById('preview').innerHTML = `
-        <b>📦 ตัวอย่างข้อมูลที่จะส่ง:</b><br>
-        ชื่อ: ${name}<br>หน่วย: ${unit}<br>หมวด: ${group}<br>
-      `;
+      document.querySelectorAll('.item-row').forEach(row => {
+        const name = row.querySelector('.name').value;
+        const unit = row.querySelector('.unit').value;
+        const group = row.querySelector('.group').value;
+        const amount = row.querySelector('.amount').value;
+        const price_unit = row.querySelector('.price_unit').value;
+        const total = row.querySelector('.total').value;
+        items.push({ name, unit, group, amount, price_unit, total });
+      });
 
-      const script = document.createElement('script');
-      const qs = `?sheet=datalog&name=${encodeURIComponent(name)}&unit=${encodeURIComponent(unit)}&group=${encodeURIComponent(group)}&callback=handleSubmit`;
-      script.src = apiURL + qs;
-      document.body.appendChild(script);
+      // แสดง Preview
+      let html = `<h3>ตัวอย่างข้อมูลที่จะส่ง</h3>`;
+      html += `วันที่บิล: ${dateBill}<br>Supplier: ${supplier}<br><br>`;
+      html += `<table><tr><th>สินค้า</th><th>หน่วย</th><th>หมวด</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>รวม</th></tr>`;
+      items.forEach(it => {
+        html += `<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.group}</td><td>${it.amount}</td><td>${it.price_unit}</td><td>${it.total}</td></tr>`;
+      });
+      html += `</table>`;
+      document.getElementById('preview').innerHTML = html;
+
+      // ส่งข้อมูลทีละรายการ
+      items.forEach(it => {
+        const qs = `?sheet=datalog&date_bill=${encodeURIComponent(dateBill)}&supplier=${encodeURIComponent(supplier)}` +
+                   `&name=${encodeURIComponent(it.name)}&unit=${encodeURIComponent(it.unit)}` +
+                   `&group=${encodeURIComponent(it.group)}&amount=${encodeURIComponent(it.amount)}` +
+                   `&price_unit=${encodeURIComponent(it.price_unit)}&total=${encodeURIComponent(it.total)}` +
+                   `&callback=handleSubmit`;
+        const sc = document.createElement('script');
+        sc.src = apiURL + qs;
+        document.body.appendChild(sc);
+      });
     }
 
     function handleSubmit(msg) {
-      alert('📬 บันทึกผลลัพธ์: ' + msg);
+      console.log('Result:', msg);
     }
 
-    // เริ่มโหลดข้อมูลทันที
+    // เริ่มโหลดข้อมูล marketlist
     loadData();
   </script>
 </body>
