@@ -14,9 +14,12 @@
     </label>
     <datalist id="itemSuggestions"></datalist>
   </div>
+
   <script>
+    // URL ของ Web App ที่ Deploy แล้ว
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
+    // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -36,23 +39,26 @@
       });
     }
 
+    // โหลดรายการสินค้าจากชีต marketlist
     async function loadMarketItems() {
       try {
         const cbName = 'cbMarketTest' + Date.now();
         const response = await jsonp(scriptURL, { sheet: 'marketlist' }, cbName);
         console.log('Response from JSONP:', response);
-        // หา array ที่มีคีย์ 'Metrial Name'
-        let data = Array.isArray(response)
+        // ดึงเฉพาะ array ของ marketlist
+        const data = Array.isArray(response)
           ? response
-          : Object.values(response).find(arr => Array.isArray(arr) && arr.length && arr[0].hasOwnProperty('MetrialName'))
-            || [];
+          : (response.marketlist || []);
         console.log('Marketlist data:', data);
+
         const dl = document.getElementById('itemSuggestions');
+        dl.innerHTML = ''; // เคลียร์ก่อน
         data.forEach(row => {
-          const name = row['MetrialName']?.trim();
+          // ชื่อต้องตรงกับหัวคอลัมน์ในชีต: 'MetrialName'
+          const name = row['MetrialName'];
           if (name) {
             const opt = document.createElement('option');
-            opt.value = name;
+            opt.value = name.trim();
             dl.appendChild(opt);
           }
         });
@@ -61,6 +67,7 @@
       }
     }
 
+    // เมื่อโหลดหน้าจอเสร็จ -> ดึง Marketlist
     document.addEventListener('DOMContentLoaded', loadMarketItems);
   </script>
 </body>
