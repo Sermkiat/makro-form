@@ -45,9 +45,9 @@
 
         const dl = document.getElementById('itemSuggestions');
         data.forEach(row => {
-          if (row['Mettrial Name']) {
+          if (row['Metrial Name']) {
             const option = document.createElement('option');
-            option.value = row['Mettrial Name'].trim();
+            option.value = row['Metrial Name'].trim();
             dl.appendChild(option);
           }
         });
