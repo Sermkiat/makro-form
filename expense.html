@@ -1,197 +1,167 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Form</title>
-  <style>
-    /* ตัวอย่างสไตล์ใบเสร็จ */
-    #preview {
-      border: 1px dashed #333;
-      padding: 16px;
-      margin-top: 20px;
-      max-width: 400px;
-      font-family: "Sarabun", sans-serif;
-    }
-    #preview h3 { text-align: center; margin-bottom: 12px; }
-    #preview p { margin: 4px 0; }
-    #preview button { margin-top: 12px; }
-  </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>บันทึกบิล / รายจ่าย</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
-  <h2>ฟอร์มบันทึกรายจ่าย</h2>
-  <form id="expenseForm">
-    <label>วันที่ซื้อ: <input type="date" id="date" required></label><br>
-    <label>แหล่งที่ซื้อ:
-      <input list="sourceSuggestions" id="source" oninput="onSourceInput()" required>
-      <datalist id="sourceSuggestions"></datalist>
-    </label><br>
-    <label>รายการที่ซื้อ:
-      <input list="itemSuggestions" id="item" oninput="onItemInput()" required>
-      <datalist id="itemSuggestions"></datalist>
-    </label><br>
-    <label>หมวดหมู่: <input type="text" id="category" readonly></label><br>
-    <label>จำนวน:
-      <input type="number" id="quantity" step="0.01" required>
-    </label>
-    <label>หน่วย:
-      <input list="unitSuggestions" id="unit" oninput="onUnitInput()" required>
-      <datalist id="unitSuggestions"></datalist>
-    </label><br>
-    <label>ราคาต่อหน่วย: <input type="number" id="price" step="1" required></label><br>
-    <label>หมายเหตุ: <input type="text" id="note"></label><br>
-    <button type="submit">บันทึกข้อมูล</button>
-  </form>
+<body class="bg-gray-100 font-sans">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">🧾 บันทึกบิล / รายจ่าย</h1>
+    <form id="expenseForm" class="bg-white p-6 rounded shadow space-y-6">
+      <!-- วันที่ซื้อ & แหล่งที่ซื้อ -->
+      <div class="space-y-4">
+        <label>
+          📅 วันที่ซื้อ
+          <input type="date" name="date" required class="w-full border p-2 rounded"/>
+        </label>
+        <label>
+          🏪 แหล่งที่ซื้อ
+          <input type="text" name="source" required class="w-full border p-2 rounded"/>
+        </label>
+      </div>
 
-  <!-- พรีวิวก่อนบันทึก -->
-  <div id="preview" style="display:none;">
-    <h3>ตัวอย่างใบเสร็จ</h3>
-    <p><strong>วันที่:</strong> <span id="pv-date"></span></p>
-    <p><strong>แหล่งที่ซื้อ:</strong> <span id="pv-source"></span></p>
-    <p><strong>รายการ:</strong> <span id="pv-item"></span> (<span id="pv-category"></span>)</p>
-    <p><strong>จำนวน:</strong> <span id="pv-quantity"></span> <span id="pv-unit"></span></p>
-    <p><strong>ราคารวม:</strong> <span id="pv-total"></span> บาท</p>
-    <p><strong>หมายเหตุ:</strong> <span id="pv-note"></span></p>
-    <button id="confirmBtn">ยืนยันการบันทึก</button>
-    <button id="cancelBtn">แก้ไข</button>
+      <!-- รายการซื้อ -->
+      <div id="entryContainer"></div>
+      <button type="button" id="addRow"
+              class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+        ➕ เพิ่มรายการใหม่
+      </button>
+
+      <div class="pt-4">
+        <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          ✅ บันทึกข้อมูลทั้งหมด
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-6 flex gap-4">
+      <a href="index.html"     class="text-blue-700 underline">🔙 หน้าหลัก</a>
+      <a href="dashboard.html" class="text-purple-700 underline">📊 Dashboard</a>
+      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit"
+         target="_blank" class="text-green-700 underline">📄 Google Sheet</a>
+    </div>
   </div>
 
   <script>
-    const marketListURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec?sheet=marketlist';
-    let marketList = [];
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // โหลด MarketList จาก Google Sheets
-      fetch(marketListURL)
-        .then(res => res.json())
-        .then(data => {
-          marketList = data.map(d => ({
-            item: d.item.trim().toLowerCase(),
-            display: d.item.trim(),
-            category: d.category.trim()
-          }));
-          const dl = document.getElementById('itemSuggestions');
-          marketList.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.display;
-            dl.appendChild(opt);
-          });
-        });
-
-      // โหลด history สำหรับแหล่งที่ซื้อ และ หน่วย
-      const sourceHist = JSON.parse(localStorage.getItem('sourceHistory') || '[]');
-      const unitHist = JSON.parse(localStorage.getItem('unitHistory') || '[]');
-      const srcDL = document.getElementById('sourceSuggestions');
-      const unitDL = document.getElementById('unitSuggestions');
-      sourceHist.forEach(s => { let o = document.createElement('option'); o.value=s; srcDL.appendChild(o); });
-      unitHist.forEach(u => { let o = document.createElement('option'); o.value=u; unitDL.appendChild(o); });
-
-      // ฟอร์ม submit → พรีวิว
-      document.getElementById('expenseForm').addEventListener('submit', e => {
-        e.preventDefault();
-        showPreview();
+    // JSONP helper
+    function jsonp(url, params, cbName) {
+      return new Promise((resolve, reject) => {
+        window[cbName] = result => {
+          resolve(result);
+          delete window[cbName];
+          script.remove();
+        };
+        const query = new URLSearchParams({ ...params, callback: cbName });
+        const script = document.createElement('script');
+        script.src = `${url}?${query}`;
+        script.onerror = () => {
+          reject(new Error('JSONP load error'));
+          delete window[cbName];
+          script.remove();
+        };
+        document.body.appendChild(script);
       });
+    }
 
-      // ปุ่มยืนยัน / ยกเลิก
-      document.getElementById('confirmBtn').addEventListener('click', saveData);
-      document.getElementById('cancelBtn').addEventListener('click', () => {
-        document.getElementById('preview').style.display = 'none';
-      });
+    // สร้าง row ของรายการซื้อ
+    const entryContainer = document.getElementById('entryContainer');
+    const addRowBtn      = document.getElementById('addRow');
+    let entryCount = 0;
+
+    function createEntryRow(i) {
+      const div = document.createElement('div');
+      div.className = 'entry-row bg-gray-50 p-4 mb-4 border rounded relative';
+      div.innerHTML = `
+        <div class="font-bold mb-2">📌 รายการที่ ${i+1}</div>
+        <label>📦 รายการที่ซื้อ
+          <input name="item" required class="w-full border p-2 rounded"/>
+        </label>
+        <label>📁 หมวดหมู่
+          <input name="category" class="w-full border p-2 rounded"/>
+        </label>
+        <div class="grid grid-cols-3 gap-4 mt-2">
+          <label>🔢 จำนวน
+            <input type="number" name="qty" value="1" min="1" step="1" required class="w-full border p-2 rounded"/>
+          </label>
+          <label>📏 หน่วย
+            <input name="unit" placeholder="เช่น ชิ้น, กิโล" class="w-full border p-2 rounded"/>
+          </label>
+          <label>💰 ราคาต่อหน่วย
+            <input type="number" name="unitPrice" min="0" step="0.01" required class="w-full border p-2 rounded"/>
+          </label>
+        </div>
+        <label class="block mt-2">📊 ราคารวม
+          <input name="totalPrice" readonly class="w-full border p-2 rounded bg-gray-100"/>
+        </label>
+        <label class="block mt-2">📝 หมายเหตุ
+          <textarea name="note" rows="2" class="w-full border p-2 rounded"></textarea>
+        </label>
+        ${i>0?`<button type="button" class="absolute top-2 right-2 text-red-600" onclick="this.closest('.entry-row').remove()">❌</button>`:''}
+      `;
+      entryContainer.appendChild(div);
+
+      // คำนวณราคารวมอัตโนมัติ
+      const qtyInput      = div.querySelector('[name="qty"]'),
+            unitPriceInput= div.querySelector('[name="unitPrice"]'),
+            totalInput    = div.querySelector('[name="totalPrice"]');
+      function calc() {
+        totalInput.value = ((+qtyInput.value||0) * (+unitPriceInput.value||0)).toFixed(2);
+      }
+      qtyInput.addEventListener('input', calc);
+      unitPriceInput.addEventListener('input', calc);
+    }
+
+    addRowBtn.addEventListener('click', () => createEntryRow(++entryCount));
+    window.addEventListener('DOMContentLoaded', () => createEntryRow(entryCount));
+
+    // ส่งข้อมูลผ่าน JSONP + SweetAlert2
+    document.getElementById('expenseForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const date   = e.target.date.value;
+      const source = e.target.source.value;
+
+      const rows = Array.from(entryContainer.querySelectorAll('.entry-row'))
+        .map(div => {
+          const item  = div.querySelector('[name="item"]').value.trim();
+          if (!item) return null;
+          return {
+            date,
+            source,
+            item,
+            category:   div.querySelector('[name="category"]').value,
+            qty:        div.querySelector('[name="qty"]').value,
+            unit:       div.querySelector('[name="unit"]').value,      // ใหม่
+            unitPrice:  div.querySelector('[name="unitPrice"]').value,
+            totalPrice: div.querySelector('[name="totalPrice"]').value,
+            note:       div.querySelector('[name="note"]').value
+          };
+        })
+        .filter(r => r);
+
+      if (!rows.length) {
+        Swal.fire('ผิดพลาด','กรุณากรอกรายการอย่างน้อยหนึ่งรายการ','error');
+        return;
+      }
+
+      Swal.fire({ title:'กำลังบันทึกรายจ่าย...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      try {
+        const cbName = 'cb' + Date.now();
+        const result = await jsonp(scriptURL, { payload: JSON.stringify(rows) }, cbName);
+        if (result.status === 'success') {
+          Swal.fire('สำเร็จ','บันทึกรายจ่ายเรียบร้อย','success').then(()=>location.reload());
+        } else {
+          Swal.fire('ผิดพลาด', result.message||'ไม่สำเร็จ','error');
+        }
+      } catch {
+        Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
+      }
     });
-
-    function onItemInput() {
-      const val = document.getElementById('item').value.trim().toLowerCase();
-      const found = marketList.find(d => d.item === val);
-      if (found) {
-        document.getElementById('category').value = found.category;
-      } else {
-        document.getElementById('category').value = '';
-      }
-    }
-
-    function onSourceInput() {
-      const val = document.getElementById('source').value.trim();
-      if (!val) return;
-      let arr = JSON.parse(localStorage.getItem('sourceHistory') || '[]');
-      if (!arr.includes(val)) {
-        arr.push(val);
-        localStorage.setItem('sourceHistory', JSON.stringify(arr));
-        let o = document.createElement('option'); o.value=val;
-        document.getElementById('sourceSuggestions').appendChild(o);
-      }
-    }
-
-    function onUnitInput() {
-      const val = document.getElementById('unit').value.trim();
-      if (!val) return;
-      let arr = JSON.parse(localStorage.getItem('unitHistory') || '[]');
-      if (!arr.includes(val)) {
-        arr.push(val);
-        localStorage.setItem('unitHistory', JSON.stringify(arr));
-        let o = document.createElement('option'); o.value=val;
-        document.getElementById('unitSuggestions').appendChild(o);
-      }
-    }
-
-    function showPreview() {
-      const d = document.getElementById('date').value;
-      const s = document.getElementById('source').value;
-      const i = document.getElementById('item').value;
-      const c = document.getElementById('category').value;
-      const q = parseFloat(document.getElementById('quantity').value);
-      const u = document.getElementById('unit').value;
-      const p = parseFloat(document.getElementById('price').value);
-      const n = document.getElementById('note').value;
-      document.getElementById('pv-date').textContent = d;
-      document.getElementById('pv-source').textContent = s;
-      document.getElementById('pv-item').textContent = i;
-      document.getElementById('pv-category').textContent = c;
-      document.getElementById('pv-quantity').textContent = q;
-      document.getElementById('pv-unit').textContent = u;
-      document.getElementById('pv-total').textContent = (q * p).toFixed(2);
-      document.getElementById('pv-note').textContent = n;
-      document.getElementById('preview').style.display = 'block';
-    }
-
-    function saveData() {
-      const formData = new URLSearchParams();
-      formData.append('date', document.getElementById('date').value);
-      formData.append('source', document.getElementById('source').value.trim().toLowerCase());
-      formData.append('item', document.getElementById('item').value.trim().toLowerCase());
-      formData.append('category', document.getElementById('category').value);
-      formData.append('quantity', document.getElementById('quantity').value);
-      formData.append('unit', document.getElementById('unit').value.trim().toLowerCase());
-      formData.append('price', document.getElementById('price').value);
-      formData.append('note', document.getElementById('note').value);
-      // บันทึกลง Google Apps Script
-      fetch('https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec', {
-        method: 'POST',
-        body: formData
-      })
-      .then(r => r.text())
-      .then(text => {
-        alert('บันทึกเรียบร้อย!');
-        location.reload();
-      });
-    }
-
-    // ฟังก์ชันลบข้อมูล (ใช้ row index)
-    function deleteRow(rowIdx) {
-      const params = new URLSearchParams({ action: 'delete', row: rowIdx });
-      fetch('https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec', {
-        method: 'POST',
-        body: params
-      }).then(() => alert('ลบเรียบร้อย')).then(() => location.reload());
-    }
-
-    // ฟังก์ชันแก้ไขข้อมูล (update)
-    function updateData(rowIdx, newData) {
-      const params = new URLSearchParams({ action: 'update', row: rowIdx, ...newData });
-      fetch('https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec', {
-        method: 'POST',
-        body: params
-      }).then(() => alert('อัปเดตเรียบร้อย')).then(() => location.reload());
-    }
   </script>
 </body>
 </html>
