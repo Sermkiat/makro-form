@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Auto Fill Suggestion Form</title>
+  <style>
+    input, button { margin: 5px; padding: 8px; width: 200px; }
+  </style>
+</head>
+<body>
+  <h3>📋 ฟอร์มกรอกข้อมูล</h3>
+  
+  <label>ชื่อสินค้า:</label><br>
+  <input type="text" id="name" list="namelist"><br>
+  <datalist id="namelist"></datalist>
+
+  <label>หน่วย:</label><br>
+  <input type="text" id="unit" readonly><br>
+
+  <label>หมวดหมู่:</label><br>
+  <input type="text" id="group" readonly><br>
+
+  <button onclick="submitData()">บันทึก</button>
+
+  <div id="preview"></div>
+
+  <script>
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
+
+    let dataList = [];
+
+    // 1. โหลดข้อมูลจาก marketlist
+    fetch(apiUrl + '?sheet=marketlist')
+      .then(res => res.json())
+      .then(data => {
+        dataList = data;
+        const datalist = document.getElementById('namelist');
+        data.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.name;
+          datalist.appendChild(option);
+        });
+      });
+
+    // 2. เมื่อพิมพ์/เลือกชื่อสินค้า → เติม unit/group
+    document.getElementById('name').addEventListener('input', function () {
+      const inputName = this.value.trim();
+      const found = dataList.find(item => item.name === inputName);
+      if (found) {
+        document.getElementById('unit').value = found.unit || '';
+        document.getElementById('group').value = found.group || '';
+      }
+    });
+
+    // 3. บันทึกข้อมูลไปที่ datalog
+    function submitData() {
+      const name = document.getElementById('name').value.trim();
+      const unit = document.getElementById('unit').value.trim();
+      const group = document.getElementById('group').value.trim();
+
+      // Preview ก่อนส่ง
+      document.getElementById('preview').innerHTML = `
+        ✅ <b>บันทึกข้อมูล:</b><br>
+        🛒 ชื่อ: ${name}<br>
+        📦 หน่วย: ${unit}<br>
+        🗂️ หมวด: ${group}<br>
+      `;
+
+      const payload = {
+        sheet: 'datalog',
+        name, unit, group
+      };
+
+      fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.text())
+      .then(msg => alert('📥 ส่งข้อมูลสำเร็จ: ' + msg))
+      .catch(err => alert('❌ เกิดข้อผิดพลาด: ' + err));
+    }
+  </script>
+</body>
+</html>
