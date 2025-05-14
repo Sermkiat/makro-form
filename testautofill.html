@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>บันทึกบิล / รายจ่าย</title>
   <style>
+    /* CSS: ตั้งค่าสไตล์พื้นฐาน */
     body { background-color: #e0f2fe; font-family: 'Noto Sans', sans-serif; margin: 0; padding: 20px; }
     .container {
       background: #ffffff;
@@ -22,11 +23,7 @@
       color: #111827;
     }
     h1::before { content: '🧾'; margin-right: 8px; font-size: 24px; }
-    .form-row {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+    .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
     .form-row .form-group { flex: 1 1 200px; }
     label {
       display: flex;
@@ -37,41 +34,23 @@
       color: #374151;
     }
     input, textarea, select {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 4px;
-      background: #fafafa;
-      box-sizing: border-box;
+      width: 100%; padding: 8px; font-size: 14px;
+      border: 1px solid #d1d5db; border-radius: 4px; background: #fafafa; box-sizing: border-box;
     }
     .items { margin-top: 32px; }
     .item {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      padding: 16px;
-      margin-bottom: 16px;
-      position: relative;
+      background: #ffffff; border: 1px solid #e5e7eb;
+      border-radius: 6px; padding: 16px; margin-bottom: 16px; position: relative;
     }
     .item h2::before { content: '📌'; margin-right: 8px; }
     .remove {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: #ef4444;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
+      position: absolute; top: 16px; right: 16px;
+      background: #ef4444; color: white; border: none;
+      border-radius: 4px; padding: 4px 8px; cursor: pointer;
     }
     #add-item, #submit {
-      margin-top: 16px;
-      padding: 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
+      margin-top: 16px; padding: 10px; border-radius: 4px;
+      cursor: pointer; font-size: 16px;
     }
     #add-item { background: #fbbf24; color: white; border: none; }
     #submit { background: #3b82f6; color: white; border: none; width: 100%; }
@@ -81,6 +60,7 @@
 <body>
   <div class="container">
     <h1>บันทึกบิล / รายจ่าย</h1>
+    <!-- แถววันที่และแหล่งที่ซื้อ -->
     <div class="form-row">
       <div class="form-group">
         <label>📅 วันที่ซื้อ</label>
@@ -91,12 +71,16 @@
         <input type="text" id="supplier" list="supplierlist" placeholder="เลือกแหล่งที่ซื้อ">
       </div>
     </div>
+    <!-- พื้นที่รายการสินค้า -->
     <div class="items" id="items-container"></div>
+    <!-- ปุ่มเพิ่มรายการและบันทึก -->
     <button id="add-item">+ เพิ่มรายการใหม่</button>
     <button id="submit">บันทึกข้อมูลทั้งหมด</button>
   </div>
+
+  <!-- datalist ชื่อสินค้าเพื่อ autofill -->
   <datalist id="namelist"></datalist>
-  <!-- รายการแนะนำแหล่งที่ซื้อ -->
+  <!-- ชื่อร้านค้าแนะนำ -->
   <datalist id="supplierlist">
     <option value="Makro">
     <option value="Tops">
@@ -104,6 +88,8 @@
     <option value="Lazada">
     <option value="Shopee">
   </datalist>
+
+  <!-- Template ของรายการแต่ละแถว -->
   <template id="item-template">
     <div class="item">
       <h2>รายการ</h2>
@@ -142,58 +128,73 @@
       <button class="remove">ลบ</button>
     </div>
   </template>
+
   <script>
+    // Google Apps Script API endpoint
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
+    // เก็บ state ระหว่างการ reload เพื่อป้องกันประกาศตัวแปรซ้ำ
     window.savedState = window.savedState || { dataList: [], totalItems: 0, savedCount: 0 };
 
+    /**
+     * loadData: โหลดข้อมูลรายการสินค้าจาก Google Sheet
+     */
     function loadData() {
-      const s = document.createElement('script');
-      s.src = apiURL + '?sheet=marketlist&callback=handleData';
-      document.body.appendChild(s);
+      const scriptTag = document.createElement('script');
+      scriptTag.src = apiURL + '?sheet=marketlist&callback=handleData';
+      document.body.appendChild(scriptTag);
     }
 
+    /**
+     * handleData: ประมวลผลข้อมูลสินค้าจาก JSONP แล้วเติมลง datalist
+     */
     function handleData(data) {
       window.savedState.dataList = data;
-      const dl = document.getElementById('namelist');
-      dl.innerHTML = '';
-      data.forEach(i => {
-        const o = document.createElement('option');
-        o.value = i.name;
-        dl.appendChild(o);
+      const listEl = document.getElementById('namelist');
+      listEl.innerHTML = '';
+      data.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        listEl.appendChild(opt);
       });
     }
 
+    /**
+     * addItemRow: สร้างแถวรายการสินค้าใหม่จาก template
+     */
     function addItemRow() {
-      const cont = document.getElementById('items-container');
-      const tmpl = document.getElementById('item-template').content.cloneNode(true);
-      tmpl.querySelector('.remove').addEventListener('click', function() {
-        this.closest('.item').remove();
-      });
-      cont.appendChild(tmpl);
+      const container = document.getElementById('items-container');
+      const clone = document.getElementById('item-template').content.cloneNode(true);
+      clone.querySelector('.remove').addEventListener('click', (e) => e.target.closest('.item').remove());
+      container.appendChild(clone);
     }
 
-    document.getElementById('items-container').addEventListener('input', e => {
+    // จับ event input เพื่อ autofill และคำนวณราคารวม
+    document.getElementById('items-container').addEventListener('input', (e) => {
       const row = e.target.closest('.item');
       if (e.target.classList.contains('name')) {
-        const fn = (window.savedState.dataList || []).find(x => x.name.trim().toLowerCase() === e.target.value.trim().toLowerCase());
-        if (fn) {
-          row.querySelector('.unit').value = fn.unit;
-          row.querySelector('.group').value = fn.group;
-          row.querySelector('.price_unit').value = fn.price_unit;
-          const a = parseFloat(row.querySelector('.amount').value) || 0;
-          const p = parseFloat(fn.price_unit) || 0;
-          row.querySelector('.total').value = (a * p).toFixed(2);
+        const found = (window.savedState.dataList || []).find(x => x.name.trim().toLowerCase() === e.target.value.trim().toLowerCase());
+        if (found) {
+          row.querySelector('.unit').value = found.unit || '';
+          row.querySelector('.group').value = found.group || '';
+          row.querySelector('.price_unit').value = found.price_unit ?? '';
+          const qty = parseFloat(row.querySelector('.amount').value) || 0;
+          const price = parseFloat(found.price_unit) || 0;
+          row.querySelector('.total').value = (qty * price).toFixed(2);
         }
       }
       if (e.target.classList.contains('amount') || e.target.classList.contains('price_unit')) {
-        const a = parseFloat(row.querySelector('.amount').value) || 0;
-        const p = parseFloat(row.querySelector('.price_unit').value) || 0;
-        row.querySelector('.total').value = (a * p).toFixed(2);
+        const qty = parseFloat(row.querySelector('.amount').value) || 0;
+        const price = parseFloat(row.querySelector('.price_unit').value) || 0;
+        row.querySelector('.total').value = (qty * price).toFixed(2);
       }
     });
 
+    // ผูกปุ่มเพิ่มรายการ
     document.getElementById('add-item').addEventListener('click', addItemRow);
 
+    /**
+     * submitData: ตรวจสอบฟอร์ม, แสดง preview ใบเสร็จ และส่งข้อมูลรายการไป Google Sheet
+     */
     document.getElementById('submit').addEventListener('click', () => {
       const dateBill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
@@ -216,12 +217,13 @@
         Swal.fire('ไม่มีรายการ', 'ต้องกรอกอย่างน้อย 1 รายการที่มีจำนวน', 'warning');
         return;
       }
-      let html = `<div style="text-align:left; font-size:13px;">🧾 <strong>ใบเสร็จ</strong><br>วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
+      let receiptHtml = `<div style="text-align:left; font-size:13px;">🧾 <strong>ใบเสร็จ</strong><br>วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
       items.forEach(it => {
-        html += `${it.nm} (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`;
+        receiptHtml += `${it.nm} (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`;
       });
-      html += `<hr><em>รวม ${items.reduce((sum, i) => sum + parseFloat(i.to || 0), 0).toFixed(2)} บาท</em></div>`;
-      Swal.fire({ title: 'ตรวจสอบข้อมูล', html, width: 320, showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'แก้ไข' })
+      receiptHtml += `<hr><em>รวม ${items.reduce((sum, i) => sum + parseFloat(i.to || 0), 0).toFixed(2)} บาท</em></div>`;
+
+      Swal.fire({ title: 'ตรวจสอบข้อมูล', html: receiptHtml, width: 320, showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'แก้ไข' })
         .then(result => {
           if (result.isConfirmed) {
             window.savedState.totalItems = items.length;
@@ -235,6 +237,9 @@
         });
     });
 
+    /**
+     * handleSubmit: callback ของ JSONP เพื่อเช็คว่าทุกรายการบันทึกครบแล้ว
+     */
     function handleSubmit(msg) {
       window.savedState.savedCount++;
       if (window.savedState.savedCount >= window.savedState.totalItems) {
@@ -243,6 +248,7 @@
       }
     }
 
+    // เริ่มต้นโหลดข้อมูลและสร้างแถวแรก
     loadData();
     addItemRow();
   </script>
