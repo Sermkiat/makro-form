@@ -237,44 +237,6 @@
     }
   }
 </style>
-```
-
-**การเปลี่ยนแปลงหลักและคำอธิบาย:**
-
-1.  **`body`:**
-    * เพิ่ม `display: flex`, `justify-content: center`, `align-items: flex-start` เพื่อจัดให้ `.container` อยู่กึ่งกลางหน้าจอ (แนวนอน) และชิดด้านบน เริ่มต้นจากด้านบนของ viewport
-    * เพิ่ม `padding: 16px;` ให้กับ `body` เพื่อให้มีระยะห่างรอบๆ `container` โดยเฉพาะบนหน้าจอเล็กๆ
-
-2.  **`.container`:**
-    * ตั้งค่า `width: 100%;` และ `max-width: 420px;` (เพิ่มจาก 300px) เพื่อให้ container ใช้พื้นที่ได้เต็มที่บนมือถือแต่ไม่กว้างจนเกินไป
-    * ลบ `margin: auto;` ออกเนื่องจาก `body` ที่เป็น flex container จะจัดการเรื่องการจัดกึ่งกลาง
-
-3.  **Input Fields (`.form-group input`, `.item-grid input`, etc.):**
-    * กำหนด `width: 100%;` เพื่อให้ input field ขยายเต็มความกว้างของ element แม่ (เช่น `form-group` หรือ grid cell)
-    * ปรับ `padding`, `font-size`, และ `height` ให้เหมาะสมกับการใช้งานบนมือถือและดูสม่ำเสมอ
-
-4.  **Input "In unit" และ "Sec unit" อยู่บรรทัดเดียวกัน:**
-    * ในส่วนของ `.item-grid.secondary` ได้ตั้งค่า `grid-template-columns: 1fr 1fr 1.5fr;` (หรือคุณอาจจะปรับเป็น `1fr 1fr 1fr;` หรือ `1fr 1fr 2fr;` ตามความเหมาะสมของความกว้างที่ต้องการสำหรับ "Remarks")
-    * การตั้งค่านี้จะทำให้ child element สองตัวแรก (ซึ่งควรจะเป็น "In unit" และ "Sec unit" ใน HTML ของคุณ) แสดงผลอยู่ข้างกันในบรรทัดเดียวกัน
-    * **สำคัญ:** Media query `@media (max-width: 480px)` ที่เคยเปลี่ยน `.item-grid.secondary` ให้เป็น `grid-template-columns: 1fr;` (ทำให้ทุกอย่างเรียงซ้อนกัน) ได้ถูกปรับแล้ว เพื่อให้ "In unit" และ "Sec unit" ยังคงอยู่บรรทัดเดียวกันตามที่คุณต้องการ แม้บนหน้าจอขนาดเล็ก
-
-5.  **ปุ่ม "+เพิ่มรายการใหม่" และ "บันทึกข้อมูลทั้งหมด" อยู่บรรทัดเดียวกัน:**
-    * `.btn-row` ยังคงใช้ `display: flex;` (ซึ่งมี `flex-direction: row;` เป็นค่าเริ่มต้น)
-    * `#add-item` และ `#submit` ได้รับ `flex: 1;` เพื่อให้ปุ่มทั้งสองแบ่งพื้นที่ในแนวนอนเท่าๆ กัน
-    * Media query `@media (max-width: 480px)` ที่เคยเปลี่ยน `.btn-row` ให้มี `flex-direction: column;` (ทำให้ปุ่มเรียงซ้อนกัน) ได้ถูก **ลบออก** เพื่อให้ปุ่มอยู่บรรทัดเดียวกันเสมอตามที่คุณต้องการ
-
-6.  **Responsive Design:**
-    * การใช้ `width: 100%` สำหรับ elements ต่างๆ, `flexbox`, และ `grid` ช่วยให้ layout ตอบสนองได้ดีกับขนาดหน้าจอที่แตกต่างกัน
-    * มีการปรับ `padding` และ `font-size` เล็กน้อยใน media queries สำหรับหน้าจอที่แคบมากๆ เพื่อให้ยังคงดูดีและใช้งานได้
-
-**วิธีใช้งาน:**
-นำโค้ด `<style>...</style>` นี้ไปแทนที่โค้ด style เดิมในไฟล์ HTML ของคุณ
-
-**ข้อเสนอแนะเพิ่มเติม:**
-* ตรวจสอบโครงสร้าง HTML ของคุณเพื่อให้แน่ใจว่า input fields "In unit" และ "Sec unit" เป็น child elements ลำดับที่หนึ่งและสองของ div ที่มี class `.item-grid.secondary`
-* ทดสอบบนอุปกรณ์ iPhone จริง หรือใช้เครื่องมือ Developer Tools ในเบราว์เซอร์ (เช่น Chrome, Safari) เพื่อจำลองขนาดหน้าจอ iPhone รุ่นต่างๆ และดูการแสดงผล
-
-หวังว่าโค้ดที่แก้ไขนี้จะช่วยให้หน้าฟอร์มของคุณแสดงผลได้ตามที่ต้องการนะคร
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
