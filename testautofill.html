@@ -1,3 +1,5 @@
+ตอนนี้codeเป็นแบบนี้
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -33,7 +35,7 @@
     }
     .form-group label.icon-date::before { content: '📅'; margin-right: 8px; }
     .form-group label.icon-supplier::before { content: '🏪'; margin-right: 8px; }
-    input, textarea, select {
+    input, textarea {
       width: 100%;
       padding: 10px;
       font-size: 14px;
@@ -115,32 +117,57 @@
     }
     .nav a:hover { text-decoration: underline; }
   </style>
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="container">
     <h1>บันทึกบิล / รายจ่าย</h1>
 
-    <div class="form-group form-row">
-      <div class="form-group">
-        <label class="icon-date">วันที่ซื้อ</label>
-        <input type="date" id="date_bill">
-      </div>
-      <div class="form-group">
-        <label class="icon-supplier">แหล่งที่ซื้อ</label>
-        <select id="supplier">
-          <option value="">--เลือกแหล่ง--</option>
-          <option>Makro</option>
-          <option>Tops</option>
-          <option>Lotus</option>
-          <option>Lazada</option>
-          <option>Shopee</option>
-        </select>
-      </div>
+    <div class="form-group">
+      <label class="icon-date">วันที่ซื้อ</label>
+      <input type="date" id="date_bill">
+    </div>
+    <div class="form-group">
+      <label class="icon-supplier">แหล่งที่ซื้อ</label>
+      <input type="text" id="supplier" placeholder="ชื่อผู้ขาย">
     </div>
 
     <div class="items" id="items-container">
-      <!-- กรอบรายการจะเพิ่มโดย JavaScript แบบเดิม พร้อมโค้ด autofill เดิม -->
+      <div class="item">
+        <h2>รายการที่ 1</h2>
+        <div class="form-group">
+          <label>รายการที่ซื้อ</label>
+          <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า">
+        </div>
+        <div class="form-group">
+          <label>หมวดหมู่</label>
+          <input type="text" class="group" placeholder="หมวดหมู่สินค้า">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>จำนวน</label>
+            <input type="number" class="amount" value="1">
+          </div>
+          <div class="form-group">
+            <label>หน่วย</label>
+            <input type="text" class="unit" placeholder="เช่น ชิ้น, กิโล">
+          </div>
+          <div class="form-group">
+            <label>ราคาต่อหน่วย</label>
+            <input type="number" step="0.01" class="price_unit" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ราคารวม</label>
+          <input type="text" class="total" readonly placeholder="--">
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุ</label>
+          <textarea class="note" rows="2" placeholder="หมายเหตุเพิ่มเติม"></textarea>
+        </div>
+        <button class="remove" onclick="removeRow(this)">ลบ</button>
+      </div>
     </div>
 
     <button id="add-item" onclick="addItemRow()">+ เพิ่มรายการใหม่</button>
@@ -151,12 +178,140 @@
       <a href="#">📊 Dashboard</a>
       <a href="#">📄 Google Sheet</a>
     </div>
+  </div>
 
   <datalist id="namelist"></datalist>
-
   <script>
-    // คงโครงสร้างเดิมไว้ แล้วเพิ่ม logic ใหม่แทรกเข้าไปใน function เดิม เช่น .trim().toLowerCase()
-    // (โป้สามารถนำ JS script จากเวอร์ชันก่อนหน้ากลับมาใส่ได้ตรงนี้ แล้วเพิ่มเงื่อนไข validate ใหม่)
+    const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
+    let dataList = [];
+    let totalItems = 0;
+    let savedCount = 0;
+
+    function loadData() {
+      const s = document.createElement('script');
+      s.src = apiURL + '?sheet=marketlist&callback=handleData';
+      document.body.appendChild(s);
+    }
+
+    function handleData(data) {
+      dataList = data;
+      const dl = document.getElementById('namelist');
+      data.forEach(i => {
+        let o = document.createElement('option');
+        o.value = i.name;
+        dl.appendChild(o);
+      });
+    }
+
+    function addItemRow() {
+      const cont = document.getElementById('items-container');
+      const row  = cont.firstElementChild.cloneNode(true);
+      row.querySelectorAll('input, textarea').forEach(i => i.value = '');
+      cont.appendChild(row);
+    }
+
+    function removeRow(btn) {
+      const rows = document.querySelectorAll('.item');
+      if (rows.length > 1) btn.closest('.item').remove();
+    }
+
+    document.getElementById('items-container').addEventListener('input', e => {
+      let row = e.target.closest('.item');
+      if (e.target.classList.contains('name')) {
+        let fn = dataList.find(x => x.name === e.target.value);
+        if (fn) {
+          row.querySelector('.unit').value = fn.unit;
+          row.querySelector('.group').value = fn.group;
+        }
+      }
+      if (e.target.classList.contains('amount') || e.target.classList.contains('price_unit')) {
+        let a = parseFloat(row.querySelector('.amount').value) || 0;
+        let p = parseFloat(row.querySelector('.price_unit').value) || 0;
+        row.querySelector('.total').value = (a * p).toFixed(2);
+      }
+    });
+
+    function submitData() {
+      const dateBill = document.getElementById('date_bill').value;
+      const supplier = document.getElementById('supplier').value;
+      const items = [];
+      document.querySelectorAll('.item').forEach((r,i) => {
+        const nm = r.querySelector('.name').value;
+        const un = r.querySelector('.unit').value;
+        const gr = r.querySelector('.group').value;
+        const am = r.querySelector('.amount').value;
+        const pu = r.querySelector('.price_unit').value;
+        const to = r.querySelector('.total').value;
+        const note = r.querySelector('.note').value || '';
+        items.push({ nm, un, gr, am, pu, to, note });
+      });
+      // สร้าง HTML preview
+      let html = `<div style="text-align:left; line-height:1.5;">
+                    <p>วันที่บิล: ${dateBill}</p>
+                    <p>แหล่งที่ซื้อ: ${supplier}</p>
+                    <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                      <tr>
+                        <th style="border:1px solid #ddd; padding:4px;">สินค้า</th>
+                        <th style="border:1px solid #ddd; padding:4px;">จำนวน</th>
+                        <th style="border:1px solid #ddd; padding:4px;">หน่วย</th>
+                        <th style="border:1px solid #ddd; padding:4px;">ราคา/หน่วย</th>
+                        <th style="border:1px solid #ddd; padding:4px;">รวม</th>
+                      </tr>`;
+      items.forEach(it => {
+        html += `<tr><td style="border:1px solid #ddd; padding:4px;">${it.nm}</td>
+                 <td style="border:1px solid #ddd; padding:4px;">${it.am}</td>
+                 <td style="border:1px solid #ddd; padding:4px;">${it.un}</td>
+                 <td style="border:1px solid #ddd; padding:4px;">${it.pu}</td>
+                 <td style="border:1px solid #ddd; padding:4px;">${it.to}</td></tr>`;
+      });
+      html += `</table></div>`;
+      // แสดง confirm popup
+      Swal.fire({
+        title: 'ตรวจสอบข้อมูลก่อนบันทึก',
+        html: html,
+        width: 600,
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then(result => {
+        if (result.isConfirmed) {
+          // เริ่มบันทึก
+          totalItems = items.length;
+          savedCount = 0;
+          Swal.fire({
+            title: 'กำลังบันทึก...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+          });
+          // ส่ง JSONP แต่ละรายการ
+          items.forEach(it => {
+            const qs = `?sheet=datalog&date_bill=${encodeURIComponent(dateBill)}` +
+                       `&supplier=${encodeURIComponent(supplier)}` +
+                       `&name=${encodeURIComponent(it.nm)}` +
+                       `&unit=${encodeURIComponent(it.un)}` +
+                       `&group=${encodeURIComponent(it.gr)}` +
+                       `&amount=${encodeURIComponent(it.am)}` +
+                       `&price_unit=${encodeURIComponent(it.pu)}` +
+                       `&total=${encodeURIComponent(it.to)}` +
+                       `&note=${encodeURIComponent(it.note)}&callback=handleSubmit`;
+            const sc = document.createElement('script');
+            sc.src = apiURL + qs;
+            document.body.appendChild(sc);
+          });
+        }
+      });
+    }
+
+    function handleSubmit(msg) {
+      savedCount++;
+      if (savedCount >= totalItems) {
+        Swal.close();
+        Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย', 'success');
+      }
+    }
+
+    loadData();
   </script>
 </body>
 </html>
+
