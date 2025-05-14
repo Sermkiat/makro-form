@@ -185,6 +185,24 @@
           <input type="text" class="group" placeholder="หมวดหมู่สินค้า">
         </div>
       </div>
+      <!-- ฟอร์มหมวดหมู่: เพิ่ม list="grouplist" เพื่อเชื่อมกับ datalist ด้านล่าง -->
+<div class="form-group">
+  <label>หมวดหมู่</label>
+  <input type="text" class="group" list="grouplist" placeholder="หมวดหมู่สินค้า">
+</div>
+
+<!-- datalist สำหรับ autocomplete หมวดหมู่ -->
+<datalist id="grouplist">
+  <option value="กับข้าว">
+  <option value="กินข้าว กินขนม">
+  <option value="ของใช้ในบ้าน">
+  <option value="ของเล่น/ใช้พราว">
+  <option value="ของใช้ส่วนตัว">
+  <option value="ยา">
+  <option value="เที่ยว/พักผ่อน">
+  <option value="งานซ่อม">
+  <option value="งานสร้าง">
+</datalist>
 
       <!-- แถวจำนวน, หน่วย, ราคาต่อหน่วย -->
       <div class="form-row">
