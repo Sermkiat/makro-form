@@ -26,7 +26,12 @@
     }
     .item h2 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; color: #111827; }
     .item h2::before { content: '📌'; margin-right: 12px; }
-    .item-index {  margin-right: 4px; font-weight: bold; }
+    .item-index {
+      display: inline-block;
+      vertical-align: middle;
+       font-weight: bold; 
+      margin-right: 4px;
+    }
     .remove { position: absolute; top: 16px; right: 16px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
     #add-item, #submit { margin-top: 16px; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 16px; }
     #add-item { background: #fbbf24; color: white; border: none; }
