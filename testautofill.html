@@ -5,11 +5,10 @@
   <!-- รองรับ Safe Area บน iPhone -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>บันทึกบิล / รายจ่าย</title>
-
 <style>
   /* ============================
-   1. พื้นฐาน & Safe Area
-   ============================ */
+    1. พื้นฐาน & Safe Area
+    ============================ */
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -23,228 +22,259 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    display: flex; /* Added to help center content */
+    justify-content: center; /* Center .container horizontally */
+    align-items: flex-start; /* Align .container to the top */
+    min-height: 100vh; /* Ensure body takes full viewport height */
+    padding: 16px; /* Add some padding around the body for smaller screens */
   }
 
   /* ============================
-   2. Container & Header
-   ============================ */
+    2. Container & Header
+    ============================ */
   .container {
     background: #ffffff;          /* กล่องพื้นขาว */
-    border: 3px solid #c2e7ff;          /* ขอบฟ้าอ่อน */
-    border-radius: 24px;            /* มุมโค้ง */
-    max-width: 300px;            /* กำหนดกว้างพอดีมือถือ */
-    margin: 16px auto;            /* จัดกึ่งกลาง */
-    padding: 16px;              /* ระยะขอบภายใน */
+    border: 3px solid #c2e7ff;   /* ขอบฟ้าอ่อน */
+    border-radius: 24px;          /* มุมโค้ง */
+    width: 100%;                  /* Make container take full width of its parent (body padding will handle spacing) */
+    max-width: 420px;             /* Increased max-width for better fit on modern iPhones */
+    /* margin: 16px auto; Removed auto margin as body is flex centering */
+    padding: 16px;                /* ระยะขอบภายใน */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Optional: adds a bit of depth */
   }
   h1 {
     font-size: 20px;
     text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 4px solid #c2e7ff;      /* เส้นขอบล่างหัวเรื่อง */
+    margin-bottom: 16px; /* Increased margin */
+    padding-bottom: 10px; /* Increased padding */
+    border-bottom: 4px solid #c2e7ff; /* เส้นขอบล่างหัวเรื่อง */
   }
 
   /* ============================
-   ปรับความกว้าง Input ให้กระชับขึ้น
-   วางทับใน <style> ของคุณ
-   ============================ */
-
-  /* 1. วันที่ + แหล่งที่ซื้อ ลด gap และปรับสัดส่วน */
-  .form-row .form-group {
-    flex: 1 1 calc(40% - 4px);    /* ช่องละ ~48% ลบ gap เล็กน้อย */
+    3. Form Elements & Layout
+    ============================ */
+  .form-row {
+    display: flex;
+    flex-wrap: wrap; /* Allow items to wrap to the next line on small screens if necessary */
+    gap: 12px; /* Space between form groups in a row */
+    margin-bottom: 16px;
+  }
+  .form-group {
+    flex: 1 1 calc(50% - 6px); /* Allows two form groups side-by-side, accounting for gap */
+    display: flex;
+    flex-direction: column; /* Stack label and input within a group if you add labels */
+  }
+  /* If a form group should take full width */
+  .form-group.full-width {
+    flex-basis: 100%;
   }
 
-  /* 2. ชื่อสินค้า + หมวดหมู่ (header) ลดช่องว่างระหว่างคอลัมน์ */
-  .item-grid.header {
-    gap: 4px;            /* ช่องว่างน้อยลง */
-  }
-
-  /* 3. แถวหลัก & รอง (main, secondary) ลดช่องว่าง */
-  .item-grid.main,
-  .item-grid.secondary {
-    gap: 4px;            /* ช่องว่างน้อยลง */
-  }
-
-  /* 4. ปรับขนาดและ padding ของ input ให้สูงน้อยลง */
+  /* Input field styling - applies to inputs in .form-group and .item-grid */
+  .form-group input,
+  .form-group select, /* Added select for consistency */
   .item-grid input,
-  .form-group input {
-    padding: 4px 6px;          /* เบากว่าเดิม */
-    font-size: 12px;          /* เล็กลงนิดหน่อย */
-    height: 28px;            /* สูงลดลง */
+  .item-grid select { /* Added select for consistency */
+    width: 100%; /* Make input fields take full width of their parent container */
+    padding: 10px 12px;
+    font-size: 14px;
+    height: 40px; /* Consistent height for touch-friendliness */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #ffffff;
   }
 
-  /* 5. ปุ่มด้านล่าง ลด gap และย่อตัวอักษร */
-  .btn-row {
-    gap: 4px;            /* ช่องว่างเล็กลง */
-  }
-  #add-item,
-  #submit {
-    padding: 8px;          /* สูงลดลง */
-    font-size: 14px;          /* ตัวอักษรเล็กลงเล็กน้อย */
-  }
   /* ============================
-   4. Card รายการสินค้า
-   ============================ */
+    4. Card รายการสินค้า
+    ============================ */
   .items {
-    margin-top: 8px;
+    margin-top: 16px;
   }
   .item {
     background: #e0f7ff;
-    border-radius: 20px;
+    border-radius: 16px; /* Slightly reduced radius */
     padding: 12px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05); /* Softer shadow */
     position: relative;
   }
-  .item h2 {
-    font-size: 18px;
+  .item h2 { /* This is for "รายการที่ 1" title inside the item card */
+    font-size: 16px;
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     color: #111827;
   }
-  /* ชื่อสินค้า + หมวดหมู่: 3:2 สัดส่วน */
-  .item-grid.header {
+
+  /* Grid for item fields */
+  .item-grid {
     display: grid;
-    grid-template-columns: 3fr 2fr;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 8px; /* Reduced gap for tighter packing */
+    margin-bottom: 12px;
   }
+
+  /* ชื่อสินค้า + หมวดหมู่: 3:2 สัดส่วน (as per original, can be 1fr 1fr for equal) */
+  .item-grid.header {
+    grid-template-columns: 3fr 2fr;
+  }
+
   /* หลัก: Amount | Unit | Price | Total */
   .item-grid.main {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(calc(25% - 6px), 1fr)); /* Responsive 4 columns */
   }
+
   /* รอง: In unit | Sec Unit | Remarks */
+  /* This ensures "In unit" and "Sec unit" are on the same line, and "Remarks" takes the third spot or wraps if needed */
   .item-grid.secondary {
-    display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: 1fr 1fr 1.5fr; /* "In unit" and "Sec unit" take 1fr, "Remarks" slightly more or adjust as needed */
+                                       /* If Remarks should be on its own line, HTML structure change is better */
   }
-  .item-grid input {
-    height: 32px;
-    padding: 0 8px;
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background: #ffffff;
-  }
+
+
   .remove {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     background: #ef4444;
     color: #fff;
     border: none;
-    border-radius: 10px;
-    padding: 4px 8px;
+    border-radius: 8px;
+    padding: 6px 10px; /* Adjusted padding */
+    font-size: 12px;
     cursor: pointer;
   }
 
   /* ============================
-   5. ปุ่มด้านล่าง
-   ============================ */
+    5. ปุ่มด้านล่าง
+    ============================ */
   .btn-row {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 12px; /* Adjusted gap */
+    margin-top: 20px;
+    /* flex-direction: row; is the default for flex, so this will ensure they are on the same line */
+  }
+  #add-item,
+  #submit {
+    flex: 1; /* Make both buttons share space equally */
+    padding: 12px 10px; /* Adjusted padding for better touch area */
+    font-size: 15px;   /* Adjusted font size */
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    height: 44px; /* Consistent button height */
+    line-height: 1.3; /* Adjust line-height if text wraps or for better vertical centering */
   }
   #add-item {
-    flex: 0 0 auto;
     background: #ffdb4d;
     color: #111827;
     border: none;
-    border-radius: 12px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
   }
   #submit {
-    flex: 1 1 auto;
     background: #4d83ff;
     color: #fff;
     border: none;
-    border-radius: 12px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
   }
 
   /* ============================
-   6. Responsive for iPhone
-   ============================ */
-  @media (max-width: 480px) {
-    .container {
-      margin: 8px;
-      padding: 12px; /* Adjust padding */
-      max-width: 100%;
-      border-radius: 16px; /* Slightly reduced border-radius */
-    }
+    6. Responsive Adjustments for very small screens (e.g., iPhone SE landscape or smaller)
+    ============================ */
+  @media (max-width: 480px) { /* This media query was quite broad, adjustments below are more specific if needed */
+    /* Most general responsive behavior is handled by flex/grid and % widths already */
+
     h1 {
-      font-size: 18px; /* Smaller font size */
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom-width: 3px; /* Thinner border */
+      font-size: 18px;
     }
-    .form-row {
-      flex-direction: column;
-      gap: 8px; /* Increased gap */
+
+    /* Example: If "วันที่ + แหล่งที่ซื้อ" should stack on very small screens */
+    .form-row.date-source .form-group { /* Add a class like "date-source" to the specific form-row if needed */
+       /* flex-basis: 100%; */ /* Uncomment to make them stack */
     }
-    .form-row .form-group {
-      flex: 1 1 100%; /* Full width for each form group */
-    }
-    .item-grid.header {
-      grid-template-columns: 1fr 1fr; /* Equal columns */
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .item-grid.main {
-      grid-template-columns: 1fr 1fr; /* Two columns */
-      gap: 6px;
-      margin-bottom: 6px;
-    }
+
+    /* For item grids, auto-fit should handle adjustments. */
+    /* If "In unit" and "Sec unit" MUST stack on very small screens: */
+    /*
     .item-grid.secondary {
-      grid-template-columns: 1fr; /* One column */
-      gap: 6px;
-      margin-bottom: 6px;
+      grid-template-columns: 1fr; // This would stack all three: In unit, Sec unit, Remarks
     }
+    */
+    /* If only In Unit and Sec Unit stack, and Remarks stays or also stacks:
+    .item-grid.secondary {
+        grid-template-columns: 1fr; // Stacks all
+    }
+    To keep In Unit and Sec Unit side by side (as requested), the base style for .item-grid.secondary
+    should not be overridden to "grid-template-columns: 1fr;" in this media query.
+    The current base style "grid-template-columns: 1fr 1fr 1.5fr;" will keep them side-by-side.
+    */
+
+
+    /* Buttons: The request was to keep them on the same line. */
+    /* The base style for .btn-row already does this. */
+    /* The previous media query had "flex-direction: column;" which is removed. */
+    /* If space is extremely tight and text on buttons is long, they might wrap text or overflow. */
+    /* Consider reducing font-size or padding on buttons for very small screens if needed. */
+    #add-item,
+    #submit {
+      font-size: 14px; /* Slightly smaller font for very small screens if needed */
+      padding: 10px 8px;
+    }
+  }
+
+  /* Further adjustments for extremely narrow screens if necessary */
+  @media (max-width: 360px) {
+    .container {
+        padding: 12px;
+    }
+    .form-group input,
     .item-grid input,
-    .form-group input {
-      padding: 6px 8px; /* Slightly increased padding */
-      font-size: 14px; /* Slightly larger font size */
-      height: 36px; /* Slightly increased height */
-      border-radius: 8px; /* Slightly reduced border-radius */
-    }
-    .item h2 {
-      font-size: 16px; /* Smaller font size */
-      margin-bottom: 6px;
-    }
-    .remove {
-      font-size: 12px; /* Smaller font size */
-      padding: 3px 6px;
-      border-radius: 8px;
-      top: 8px;
-      right: 8px;
-    }
-    .btn-row {
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
+    .form-group select,
+    .item-grid select {
+        font-size: 13px;
+        padding: 8px 10px;
+        height: 38px;
     }
     #add-item,
     #submit {
-      width: 100%;
-      font-size: 16px; /* Slightly larger font size */
-      padding: 10px;
-      border-radius: 10px; /* Slightly reduced border-radius */
+      font-size: 13px;
+      height: 40px;
     }
   }
 </style>
+```
 
+**การเปลี่ยนแปลงหลักและคำอธิบาย:**
 
+1.  **`body`:**
+    * เพิ่ม `display: flex`, `justify-content: center`, `align-items: flex-start` เพื่อจัดให้ `.container` อยู่กึ่งกลางหน้าจอ (แนวนอน) และชิดด้านบน เริ่มต้นจากด้านบนของ viewport
+    * เพิ่ม `padding: 16px;` ให้กับ `body` เพื่อให้มีระยะห่างรอบๆ `container` โดยเฉพาะบนหน้าจอเล็กๆ
 
+2.  **`.container`:**
+    * ตั้งค่า `width: 100%;` และ `max-width: 420px;` (เพิ่มจาก 300px) เพื่อให้ container ใช้พื้นที่ได้เต็มที่บนมือถือแต่ไม่กว้างจนเกินไป
+    * ลบ `margin: auto;` ออกเนื่องจาก `body` ที่เป็น flex container จะจัดการเรื่องการจัดกึ่งกลาง
+
+3.  **Input Fields (`.form-group input`, `.item-grid input`, etc.):**
+    * กำหนด `width: 100%;` เพื่อให้ input field ขยายเต็มความกว้างของ element แม่ (เช่น `form-group` หรือ grid cell)
+    * ปรับ `padding`, `font-size`, และ `height` ให้เหมาะสมกับการใช้งานบนมือถือและดูสม่ำเสมอ
+
+4.  **Input "In unit" และ "Sec unit" อยู่บรรทัดเดียวกัน:**
+    * ในส่วนของ `.item-grid.secondary` ได้ตั้งค่า `grid-template-columns: 1fr 1fr 1.5fr;` (หรือคุณอาจจะปรับเป็น `1fr 1fr 1fr;` หรือ `1fr 1fr 2fr;` ตามความเหมาะสมของความกว้างที่ต้องการสำหรับ "Remarks")
+    * การตั้งค่านี้จะทำให้ child element สองตัวแรก (ซึ่งควรจะเป็น "In unit" และ "Sec unit" ใน HTML ของคุณ) แสดงผลอยู่ข้างกันในบรรทัดเดียวกัน
+    * **สำคัญ:** Media query `@media (max-width: 480px)` ที่เคยเปลี่ยน `.item-grid.secondary` ให้เป็น `grid-template-columns: 1fr;` (ทำให้ทุกอย่างเรียงซ้อนกัน) ได้ถูกปรับแล้ว เพื่อให้ "In unit" และ "Sec unit" ยังคงอยู่บรรทัดเดียวกันตามที่คุณต้องการ แม้บนหน้าจอขนาดเล็ก
+
+5.  **ปุ่ม "+เพิ่มรายการใหม่" และ "บันทึกข้อมูลทั้งหมด" อยู่บรรทัดเดียวกัน:**
+    * `.btn-row` ยังคงใช้ `display: flex;` (ซึ่งมี `flex-direction: row;` เป็นค่าเริ่มต้น)
+    * `#add-item` และ `#submit` ได้รับ `flex: 1;` เพื่อให้ปุ่มทั้งสองแบ่งพื้นที่ในแนวนอนเท่าๆ กัน
+    * Media query `@media (max-width: 480px)` ที่เคยเปลี่ยน `.btn-row` ให้มี `flex-direction: column;` (ทำให้ปุ่มเรียงซ้อนกัน) ได้ถูก **ลบออก** เพื่อให้ปุ่มอยู่บรรทัดเดียวกันเสมอตามที่คุณต้องการ
+
+6.  **Responsive Design:**
+    * การใช้ `width: 100%` สำหรับ elements ต่างๆ, `flexbox`, และ `grid` ช่วยให้ layout ตอบสนองได้ดีกับขนาดหน้าจอที่แตกต่างกัน
+    * มีการปรับ `padding` และ `font-size` เล็กน้อยใน media queries สำหรับหน้าจอที่แคบมากๆ เพื่อให้ยังคงดูดีและใช้งานได้
+
+**วิธีใช้งาน:**
+นำโค้ด `<style>...</style>` นี้ไปแทนที่โค้ด style เดิมในไฟล์ HTML ของคุณ
+
+**ข้อเสนอแนะเพิ่มเติม:**
+* ตรวจสอบโครงสร้าง HTML ของคุณเพื่อให้แน่ใจว่า input fields "In unit" และ "Sec unit" เป็น child elements ลำดับที่หนึ่งและสองของ div ที่มี class `.item-grid.secondary`
+* ทดสอบบนอุปกรณ์ iPhone จริง หรือใช้เครื่องมือ Developer Tools ในเบราว์เซอร์ (เช่น Chrome, Safari) เพื่อจำลองขนาดหน้าจอ iPhone รุ่นต่างๆ และดูการแสดงผล
+
+หวังว่าโค้ดที่แก้ไขนี้จะช่วยให้หน้าฟอร์มของคุณแสดงผลได้ตามที่ต้องการนะคร
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
