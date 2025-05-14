@@ -47,38 +47,44 @@
     border-bottom: 4px solid #c2e7ff;   /* เส้นขอบล่างหัวเรื่อง */
   }
 
-  /* ============================
-     วันที่ + แหล่งที่ซื้อ
-     ============================ */
-  .form-row {
-    display: flex;
-    gap: 8px;                           /* ระยะห่างเล็กลง */
-    flex-wrap: wrap;                    /* ถ้าไม่พอ ให้ wrap ลงบรรทัดใหม่ */
-    margin-bottom: 16px;
-  }
-  .form-group {
-    flex: 1 1 150px;                    /* ขยายเต็ม แต่มี min width */
-    display: flex;
-    flex-direction: column;
-  }
-  .form-group label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;                           /* ช่องว่างระหว่างไอคอนกับข้อความ */
-  }
-  .form-group input {
-    height: 36px;                       /* กำหนดความสูงช่องกรอก */
-    padding: 0 12px;
-    font-size: 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 12px;
-    background: #fafafa;
-  }
+ /* ============================
+   วันที่ + แหล่งที่ซื้อ
+   ปรับให้แต่ละช่องกินครึ่งบรรทัด (minus gap)
+   ============================ */
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+/* ให้ช่องกรอกแต่ละกล่องครึ่งหนึ่งของพื้นที่-ช่องว่าง */
+.form-row .form-group {
+  flex: 1 1 calc(50% - 12px); /* 50% minus gap */
+  display: flex;
+  flex-direction: column;
+}
 
+/* ============================
+   ชื่อสินค้า + หมวดหมู่ (header)
+   ให้กิน 3:2 ตามตัวอย่างภาพ
+   ============================ */
+.item-grid.header {
+  display: grid;
+  grid-template-columns: 3fr 2fr; /* ปรับเป็น 3:2 แทน 2:1 */
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ============================
+   ช่อง INPUT ทั่วไป
+   ไม่ต้องเต็ม 100% อีกต่อไป
+   ============================ */
+input,
+textarea,
+select {
+  width: 100%;       /* ภายในคอลัมน์ ให้เต็มคอลัมน์ */
+  max-width: none;   /* ยกเลิกการจำกัดตาม container เดิม */
+}
   /* ============================
      Card รายการสินค้า
      ============================ */
