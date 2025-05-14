@@ -6,187 +6,203 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>บันทึกบิล / รายจ่าย</title>
 
-  <style>
-    /* ========================
-       1. พื้นฐาน (Base Styles)
-       ======================== */
-    body {
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      background-color: #e0f2fe;
-      font-family: 'Noto Sans', sans-serif;
-      margin: 0;
-    }
+<!-- วางบล็อกนี้แทน <style> เดิม ใน <head> -->
+<style>
+  /* ============================
+     Base Styles & Safe Area
+     ============================ */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    /* พื้นหลังนอกกล่องตามภาพตัวอย่าง */
+    background-color: #5fa0ff;
+    font-family: 'Noto Sans', sans-serif;
+    /* รองรับ Safe Area บน iPhone */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* ============================
+     Container & Header
+     ============================ */
+  .container {
+    background: #ffffff;                /* กล่องพื้นขาว */
+    border: 3px solid #c2e7ff;          /* ขอบฟ้าอ่อน */
+    border-radius: 24px;                /* มุมโค้งตามภาพ */
+    max-width: 400px;                   /* กำหนดกว้างพอดีมือถือ */
+    margin: 16px auto;                  /* จัดกึ่งกลาง */
+    padding: 16px;                      /* ระยะขอบภายใน */
+    position: relative;
+  }
+  h1 {
+    font-size: 20px;                    /* ขนาดหัวเรื่อง */
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 4px solid #c2e7ff;   /* เส้นขอบล่างหัวเรื่อง */
+  }
+
+  /* ============================
+     วันที่ + แหล่งที่ซื้อ
+     ============================ */
+  .form-row {
+    display: flex;
+    gap: 8px;                           /* ระยะห่างเล็กลง */
+    flex-wrap: wrap;                    /* ถ้าไม่พอ ให้ wrap ลงบรรทัดใหม่ */
+    margin-bottom: 16px;
+  }
+  .form-group {
+    flex: 1 1 150px;                    /* ขยายเต็ม แต่มี min width */
+    display: flex;
+    flex-direction: column;
+  }
+  .form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;                           /* ช่องว่างระหว่างไอคอนกับข้อความ */
+  }
+  .form-group input {
+    height: 36px;                       /* กำหนดความสูงช่องกรอก */
+    padding: 0 12px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #fafafa;
+  }
+
+  /* ============================
+     Card รายการสินค้า
+     ============================ */
+  .items {
+    margin-top: 8px;
+  }
+  .item {
+    background: #e0f7ff;                /* พื้นหลังฟ้าอ่อน */
+    border-radius: 20px;
+    padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .item h2 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #111827;
+  }
+  /* แถวชื่อสินค้า + หมวดหมู่ */
+  .item-grid.header {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* แถวหลัก: Amount | Unit | Price | Total */
+  .item-grid.main {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* แถวรอง: In unit | Sec Unit | Remarks */
+  .item-grid.secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .item-grid input {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .remove {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  /* ============================
+     ปุ่มด้านล่าง
+     ============================ */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  #add-item {
+    flex: 0 0 auto;
+    background: #ffdb4d;
+    color: #111827;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #submit {
+    flex: 1 1 auto;
+    background: #4d83ff;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* ============================
+     Responsive for iPhone
+     ============================ */
+  @media (max-width: 480px) {
     .container {
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      max-width: 800px;
-      margin: 16px auto;
-      padding: 16px;
+      margin: 8px;
+      padding: 8px;
+      max-width: 100%;
+    }
+    .form-row {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .item-grid.header,
+    .item-grid.main,
+    .item-grid.secondary {
+      grid-template-columns: 1fr;
+    }
+    .btn-row {
+      flex-direction: column;
+      gap: 6px;
+    }
+    #add-item,
+    #submit {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px;
     }
     h1 {
-      font-size: 24px;
-      text-align: center;
-      margin: 0 0 16px;
-    }
-
-    /* ========================
-       2. วันที่ + แหล่งที่ซื้อ
-       ======================== */
-    .form-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-    .form-group {
-      flex: 1 1 80px; //160
-      display: flex;
-      flex-direction: column;
-    }
-    .form-group label {
-      font-size: 14px;
-      font-weight: 300; //600
-      margin-bottom: 4px;
-      color: #374151;
-      display: flex;
-      align-items: center;
-    }
-    .form-group input {
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background: #fafafa;
-    }
-
-    /* ========================
-       3. Card รายการสินค้า
-       ======================== */
-    .items {
-      margin-top: 8px;
-    }
-    .item {
-      background: #e0f7ff;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      position: relative;
-    }
-    .item h2 {
-      margin: 0 0 8px;
       font-size: 18px;
-      font-weight: bold;
-      color: #111827;
+      margin-bottom: 10px;
     }
-    /* แถวชื่อสินค้า + หมวดหมู่ */
-    .item-grid.header {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    /* แถวหลัก: Amount | Unit | Price | Total */
-    .item-grid.main {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    /* แถวรอง: In unit | Sec Unit | Remarks */
-    .item-grid.secondary {
-      display: grid;
-      grid-template-columns: 1fr 1fr 2fr;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .item-grid input {
-      padding: 6px;
-      font-size: 13px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-    }
-    .remove {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: #ef4444;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-
-    /* ========================
-       4. ปุ่มด้านล่าง
-       ======================== */
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-    }
-    #add-item {
-      flex: 0 0 auto;
-      background: #fbbf24;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #submit {
-      flex: 1 1 auto;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    /* ========================
-       5. Responsive for iPhone
-       ======================== */
-    @media (max-width: 480px) {
-      .container {
-        margin: 8px;
-        padding: 8px;
-        max-width: 100%;
-        box-sizing: border-box;
-      }
-      .form-row {
-        flex-direction: column;
-        gap: 8px;
-      }
-      .item-grid.header,
-      .item-grid.main,
-      .item-grid.secondary {
-        grid-template-columns: 1fr;
-      }
-      .btn-row {
-        flex-direction: column;
-        gap: 8px;
-      }
-      #add-item,
-      #submit {
-        width: 100%;
-        font-size: 14px;
-        padding: 8px;
-      }
-      h1 {
-        font-size: 20px;
-        margin-bottom: 12px;
-      }
-    }
-  </style>
+  }
+</style>
 
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
