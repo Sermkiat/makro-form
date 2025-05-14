@@ -46,37 +46,43 @@ h1 {
 }
 
 /* ============================
-   3. วันที่ + แหล่งที่ซื้อ
+   ปรับความกว้าง Input ให้กระชับขึ้น
+   วางทับใน <style> ของคุณ
    ============================ */
-.form-row {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
+
+/* 1. วันที่ + แหล่งที่ซื้อ ลด gap และปรับสัดส่วน */
 .form-row .form-group {
-  flex: 1 1 calc(45% - 4px);         /* ครึ่งหนึ่งของพื้นที่ minus gap */
-  display: flex;
-  flex-direction: column;
-}
-.form-group label {
-  font-size: 14px;
-  font-weight: 400;
-  color: #374151;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.form-group input {
-  height: 28px;
-  padding: 4px 6px;
-  font-size: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #fafafa;
+  flex: 1 1 calc(48% - 4px);   /* ช่องละ ~48% ลบ gap เล็กน้อย */
 }
 
+/* 2. ชื่อสินค้า + หมวดหมู่ (header) ลดช่องว่างระหว่างคอลัมน์ */
+.item-grid.header {
+  gap: 4px;                    /* ช่องว่างน้อยลง */
+}
+
+/* 3. แถวหลัก & รอง (main, secondary) ลดช่องว่าง */
+.item-grid.main,
+.item-grid.secondary {
+  gap: 4px;                    /* ช่องว่างน้อยลง */
+}
+
+/* 4. ปรับขนาดและ padding ของ input ให้สูงน้อยลง */
+.item-grid input,
+.form-group input {
+  padding: 4px 6px;            /* เบากว่าเดิม */
+  font-size: 12px;             /* เล็กลงนิดหน่อย */
+  height: 28px;                /* สูงลดลง */
+}
+
+/* 5. ปุ่มด้านล่าง ลด gap และย่อตัวอักษร */
+.btn-row {
+  gap: 4px;                    /* ช่องว่างเล็กลง */
+}
+#add-item,
+#submit {
+  padding: 8px;                /* สูงลดลง */
+  font-size: 14px;             /* ตัวอักษรเล็กลงเล็กน้อย */
+}
 /* ============================
    4. Card รายการสินค้า
    ============================ */
