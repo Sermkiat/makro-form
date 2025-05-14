@@ -23,225 +23,237 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    -webkit-font-smoothing: antialiased; /* ทำให้ font คมชัดขึ้นบน iOS */
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* ============================
    2. Container & Header
    ============================ */
   .container {
-    background: #ffffff;          /* กล่องพื้นขาว */
-    border: 3px solid #c2e7ff;          /* ขอบฟ้าอ่อน */
-    border-radius: 24px;            /* มุมโค้ง */
-    max-width: 300px;            /* กำหนดกว้างพอดีมือถือ */
-    margin: 16px auto;            /* จัดกึ่งกลาง */
-    padding: 16px;              /* ระยะขอบภายใน */
+    background: #ffffff;
+    border: 2px solid #c2e7ff; /* ลดขนาดขอบเล็กน้อย */
+    border-radius: 20px; /* ลดความโค้งเล็กน้อย */
+    width: 100%; /* ให้ container เต็มความกว้างของ viewport */
+    max-width: 420px; /* กำหนด max-width สำหรับจอที่ใหญ่กว่ามือถือ */
+    margin: 0 auto; /* จัดกึ่งกลางเมื่อ max-width ทำงาน */
+    padding: 16px;
+    min-height: 100vh; /* ให้ container สูงเต็มหน้าจอ */
+    display: flex; /* เพิ่ม flexbox เพื่อจัดเรียงเนื้อหาภายใน */
+    flex-direction: column; /* จัดเรียงเนื้อหาแนวตั้ง */
   }
   h1 {
-    font-size: 20px;
+    font-size: 22px; /* เพิ่มขนาด font เล็กน้อย */
     text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 4px solid #c2e7ff;      /* เส้นขอบล่างหัวเรื่อง */
+    margin-bottom: 16px; /* เพิ่มระยะห่างด้านล่าง */
+    padding-bottom: 10px; /* เพิ่มระยะห่าง padding */
+    border-bottom: 3px solid #c2e7ff; /* ลดความหนาเส้นขอบ */
+    color: #111827; /* เพิ่มสีตัวอักษร */
   }
 
   /* ============================
-   ปรับความกว้าง Input ให้กระชับขึ้น
-   วางทับใน <style> ของคุณ
+   3. Form Elements & Input Fields
    ============================ */
 
-  /* 1. วันที่ + แหล่งที่ซื้อ ลด gap และปรับสัดส่วน */
-  .form-row .form-group {
-    flex: 1 1 calc(40% - 4px);    /* ช่องละ ~48% ลบ gap เล็กน้อย */
+  /* ใช้กับ form-row ที่ต้องการให้ input อยู่บรรทัดเดียวกัน */
+  .form-row {
+    display: flex;
+    gap: 12px; /* เพิ่ม gap ระหว่าง elements */
+    margin-bottom: 12px; /* เพิ่มระยะห่างด้านล่าง */
   }
 
-  /* 2. ชื่อสินค้า + หมวดหมู่ (header) ลดช่องว่างระหว่างคอลัมน์ */
-  .item-grid.header {
-    gap: 4px;            /* ช่องว่างน้อยลง */
+  .form-group {
+    flex: 1 1 auto; /* ให้ form group ขยายตามพื้นที่ที่มี */
+    display: flex;
+    flex-direction: column; /* จัดเรียง label และ input แนวตั้ง */
   }
 
-  /* 3. แถวหลัก & รอง (main, secondary) ลดช่องว่าง */
-  .item-grid.main,
-  .item-grid.secondary {
-    gap: 4px;            /* ช่องว่างน้อยลง */
+  .form-group label { /* เพิ่ม label styling (ถ้ามี) */
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #374151;
   }
 
-  /* 4. ปรับขนาดและ padding ของ input ให้สูงน้อยลง */
-  .item-grid input,
-  .form-group input {
-    padding: 4px 6px;          /* เบากว่าเดิม */
-    font-size: 12px;          /* เล็กลงนิดหน่อย */
-    height: 28px;            /* สูงลดลง */
-  }
-
-  /* 5. ปุ่มด้านล่าง ลด gap และย่อตัวอักษร */
-  .btn-row {
-    gap: 4px;            /* ช่องว่างเล็กลง */
-  }
-  #add-item,
-  #submit {
-    padding: 8px;          /* สูงลดลง */
-    font-size: 14px;          /* ตัวอักษรเล็กลงเล็กน้อย */
-  }
-  /* ============================
-   4. Card รายการสินค้า
-   ============================ */
-  .items {
-    margin-top: 8px;
-  }
-  .item {
-    background: #e0f7ff;
-    border-radius: 20px;
-    padding: 12px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-    position: relative;
-  }
-  .item h2 {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 8px;
+  /* Input ทั่วไป และใน item-grid */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select, /* เพิ่ม select styling */
+  .item-grid input { /* รวม .item-grid input เข้ามาด้วย */
+    width: 100%; /* ทำให้ input เต็มความกว้างของ parent */
+    padding: 10px 12px; /* ปรับ padding ให้เหมาะสม */
+    font-size: 16px; /* ปรับขนาด font */
+    border: 1px solid #d1d5db; /* ปรับสีขอบ input */
+    border-radius: 12px; /* ปรับความโค้ง */
+    background-color: #f9fafb; /* เปลี่ยนสีพื้นหลัง input เล็กน้อย */
+    height: 44px; /* กำหนดความสูงมาตรฐาน */
     color: #111827;
   }
-  /* ชื่อสินค้า + หมวดหมู่: 3:2 สัดส่วน */
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="date"]:focus,
+  select:focus,
+  .item-grid input:focus { /* เพิ่ม focus state */
+    outline: none;
+    border-color: #5fa0ff;
+    box-shadow: 0 0 0 2px rgba(95, 160, 255, 0.3);
+  }
+
+
+  /* ============================
+   4. Card รายการสินค้า (Item Card)
+   ============================ */
+  .items {
+    margin-top: 16px; /* เพิ่มระยะห่างด้านบน */
+    flex-grow: 1; /* ให้ส่วนรายการสินค้าขยายเต็มพื้นที่ที่เหลือ */
+  }
+  .item {
+    background: #f0f9ff; /* ปรับสีพื้นหลัง card เล็กน้อย */
+    border: 1px solid #c2e7ff; /* เพิ่มขอบบางๆ */
+    border-radius: 16px; /* ลดความโค้งเล็กน้อย */
+    padding: 16px; /* เพิ่ม padding */
+    margin-bottom: 20px; /* เพิ่มระยะห่างระหว่าง card */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* ปรับเงา */
+    position: relative;
+  }
+  .item h2 { /* ใช้สำหรับชื่อรายการ หรือ section header ใน card */
+    font-size: 18px;
+    font-weight: 600; /* ปรับความหนา */
+    margin-bottom: 12px;
+    color: #0c4a6e; /* ปรับสี */
+  }
+
+  /* Grid Layouts ภายใน Card */
+  .item-grid { /* Base style for all grids in item */
+    display: grid;
+    gap: 10px; /* ปรับ gap ให้สอดคล้องกัน */
+    margin-bottom: 10px;
+  }
+
   .item-grid.header {
-    display: grid;
-    grid-template-columns: 3fr 2fr;
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: 1fr 1fr; /* ปรับเป็น 2 คอลัมน์เท่ากันสำหรับ mobile first */
   }
-  /* หลัก: Amount | Unit | Price | Total */
+
   .item-grid.main {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive columns */
   }
-  /* รอง: In unit | Sec Unit | Remarks */
+
   .item-grid.secondary {
-    display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
-    gap: 8px;
-    margin-bottom: 8px;
+    grid-template-columns: 1fr; /* เริ่มจาก 1 คอลัมน์ */
   }
-  .item-grid input {
-    height: 32px;
-    padding: 0 8px;
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background: #ffffff;
-  }
+
   .remove {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 16px; /* ปรับตำแหน่ง */
+    right: 16px; /* ปรับตำแหน่ง */
     background: #ef4444;
     color: #fff;
     border: none;
-    border-radius: 10px;
-    padding: 4px 8px;
+    border-radius: 50%; /* ทำให้เป็นวงกลม */
+    width: 32px; /* กำหนดขนาด */
+    height: 32px; /* กำหนดขนาด */
+    font-size: 16px; /* ปรับขนาดไอคอน (ถ้าใช้ font icon) */
+    display: flex; /* จัด icon ให้อยู่กลางปุ่ม */
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .remove:hover {
+    background: #dc2626;
   }
 
   /* ============================
-   5. ปุ่มด้านล่าง
+   5. ปุ่มด้านล่าง (Action Buttons)
    ============================ */
   .btn-row {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 12px;
+    margin-top: 24px; /* เพิ่มระยะห่างด้านบน */
+    padding-bottom: env(safe-area-inset-bottom); /* เพิ่ม padding ด้านล่างสำหรับ safe area */
   }
-  #add-item {
-    flex: 0 0 auto;
-    background: #ffdb4d;
-    color: #111827;
-    border: none;
-    border-radius: 12px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-  }
+
+  #add-item,
   #submit {
-    flex: 1 1 auto;
-    background: #4d83ff;
-    color: #fff;
+    flex: 1 1 auto; /* ให้ปุ่มขยายเท่ากัน */
     border: none;
-    border-radius: 12px;
-    padding: 10px;
+    border-radius: 14px; /* ปรับความโค้ง */
+    padding: 12px 16px; /* ปรับ padding */
     font-size: 16px;
+    font-weight: 500; /* ปรับความหนา */
     cursor: pointer;
+    text-align: center;
+    height: 48px; /* กำหนดความสูง */
+  }
+
+  #add-item {
+    background: #ffc107; /* สีเหลืองที่สดใสขึ้น */
+    color: #1f2937;
+  }
+  #add-item:hover {
+    background: #ffca2c;
+  }
+
+  #submit {
+    background: #3b82f6; /* สีฟ้าที่เข้มขึ้น */
+    color: #ffffff;
+  }
+  #submit:hover {
+    background: #2563eb;
   }
 
   /* ============================
-   6. Responsive for iPhone
+   6. Responsive Adjustments (ถ้าจำเป็นต้องปรับเพิ่มเติมสำหรับจอที่ใหญ่ขึ้น)
    ============================ */
-  @media (max-width: 480px) {
+  @media (min-width: 640px) { /* สำหรับ Tablet หรือจอที่กว้างขึ้น */
     .container {
-      margin: 8px;
-      padding: 12px; /* Adjust padding */
-      max-width: 100%;
-      border-radius: 16px; /* Slightly reduced border-radius */
+      padding: 24px;
+      border-radius: 24px;
     }
+
     h1 {
-      font-size: 18px; /* Smaller font size */
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom-width: 3px; /* Thinner border */
+      font-size: 24px;
     }
+
     .form-row {
-      flex-direction: column;
-      gap: 8px; /* Increased gap */
+      /* อาจจะไม่ต้องเปลี่ยนถ้า flex ทำงานได้ดีอยู่แล้ว */
     }
-    .form-row .form-group {
-      flex: 1 1 100%; /* Full width for each form group */
-    }
+
     .item-grid.header {
-      grid-template-columns: 1fr 1fr; /* Equal columns */
-      gap: 6px;
-      margin-bottom: 6px;
+      /* อาจจะยังคง 1fr 1fr หรือปรับตามความเหมาะสม */
     }
+
     .item-grid.main {
-      grid-template-columns: 1fr 1fr; /* Two columns */
-      gap: 6px;
-      margin-bottom: 6px;
+      grid-template-columns: repeat(4, 1fr); /* กลับไปเป็น 4 คอลัมน์สำหรับจอใหญ่ */
     }
+
     .item-grid.secondary {
-      grid-template-columns: 1fr; /* One column */
-      gap: 6px;
-      margin-bottom: 6px;
+      grid-template-columns: 1fr 1fr 2fr; /* กลับไปเป็น layout เดิมสำหรับจอใหญ่ */
     }
-    .item-grid input,
-    .form-group input {
-      padding: 6px 8px; /* Slightly increased padding */
-      font-size: 14px; /* Slightly larger font size */
-      height: 36px; /* Slightly increased height */
-      border-radius: 8px; /* Slightly reduced border-radius */
+
+    #add-item {
+      flex: 0 0 auto; /* ให้ปุ่ม "เพิ่มรายการ" มีขนาดตามเนื้อหา */
+      padding: 12px 24px;
     }
-    .item h2 {
-      font-size: 16px; /* Smaller font size */
-      margin-bottom: 6px;
-    }
-    .remove {
-      font-size: 12px; /* Smaller font size */
-      padding: 3px 6px;
-      border-radius: 8px;
-      top: 8px;
-      right: 8px;
-    }
-    .btn-row {
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    #add-item,
+
     #submit {
-      width: 100%;
-      font-size: 16px; /* Slightly larger font size */
-      padding: 10px;
-      border-radius: 10px; /* Slightly reduced border-radius */
+      flex: 1 1 auto; /* ให้ปุ่ม "บันทึก" ขยายเต็มพื้นที่ที่เหลือ */
+    }
+
+    .btn-row {
+      flex-direction: row; /* ทำให้ปุ่มเรียงแนวนอนบนจอใหญ่ */
     }
   }
+
+  /* ส่วน CSS ที่คุณเคยใส่ไว้สำหรับปรับความกระชับ อาจจะไม่จำเป็นแล้ว
+     หรือสามารถนำบางส่วนมาปรับใช้กับ @media query ด้านบนได้
+     ถ้าต้องการ layout ที่แตกต่างกันระหว่างจอเล็กและจอใหญ่มากๆ
+  */
+
 </style>
+
 
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
