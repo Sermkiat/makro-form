@@ -6,211 +6,241 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>บันทึกบิล / รายจ่าย</title>
 
-<!-- วางบล็อกนี้แทน <style> เดิม ใน <head> -->
 <style>
- /* ============================
+  /* ============================
    1. พื้นฐาน & Safe Area
    ============================ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-body {
-  background-color: #5fa0ff;
-  font-family: 'Noto Sans', sans-serif;
-  /* รองรับ Safe Area บน iPhone */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background-color: #5fa0ff;
+    font-family: 'Noto Sans', sans-serif;
+    /* รองรับ Safe Area บน iPhone */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 
-/* ============================
+  /* ============================
    2. Container & Header
    ============================ */
-.container {
-  background: #ffffff;                /* กล่องพื้นขาว */
-  border: 3px solid #c2e7ff;          /* ขอบฟ้าอ่อน */
-  border-radius: 24px;                /* มุมโค้ง */
-  max-width: 300px;                   /* กำหนดกว้างพอดีมือถือ */
-  margin: 16px auto;                  /* จัดกึ่งกลาง */
-  padding: 16px;                      /* ระยะขอบภายใน */
-}
-h1 {
-  font-size: 20px;
-  text-align: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 4px solid #c2e7ff;   /* เส้นขอบล่างหัวเรื่อง */
-}
+  .container {
+    background: #ffffff;          /* กล่องพื้นขาว */
+    border: 3px solid #c2e7ff;          /* ขอบฟ้าอ่อน */
+    border-radius: 24px;            /* มุมโค้ง */
+    max-width: 300px;            /* กำหนดกว้างพอดีมือถือ */
+    margin: 16px auto;            /* จัดกึ่งกลาง */
+    padding: 16px;              /* ระยะขอบภายใน */
+  }
+  h1 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 4px solid #c2e7ff;      /* เส้นขอบล่างหัวเรื่อง */
+  }
 
-/* ============================
+  /* ============================
    ปรับความกว้าง Input ให้กระชับขึ้น
    วางทับใน <style> ของคุณ
    ============================ */
 
-/* 1. วันที่ + แหล่งที่ซื้อ ลด gap และปรับสัดส่วน */
-.form-row .form-group {
-  flex: 1 1 calc(40% - 4px);   /* ช่องละ ~48% ลบ gap เล็กน้อย */
-}
-
-/* 2. ชื่อสินค้า + หมวดหมู่ (header) ลดช่องว่างระหว่างคอลัมน์ */
-.item-grid.header {
-  gap: 4px;                    /* ช่องว่างน้อยลง */
-}
-
-/* 3. แถวหลัก & รอง (main, secondary) ลดช่องว่าง */
-.item-grid.main,
-.item-grid.secondary {
-  gap: 4px;                    /* ช่องว่างน้อยลง */
-}
-
-/* 4. ปรับขนาดและ padding ของ input ให้สูงน้อยลง */
-.item-grid input,
-.form-group input {
-  padding: 4px 6px;            /* เบากว่าเดิม */
-  font-size: 12px;             /* เล็กลงนิดหน่อย */
-  height: 28px;                /* สูงลดลง */
-}
-
-/* 5. ปุ่มด้านล่าง ลด gap และย่อตัวอักษร */
-.btn-row {
-  gap: 4px;                    /* ช่องว่างเล็กลง */
-}
-#add-item,
-#submit {
-  padding: 8px;                /* สูงลดลง */
-  font-size: 14px;             /* ตัวอักษรเล็กลงเล็กน้อย */
-}
-/* ============================
-   4. Card รายการสินค้า
-   ============================ */
-.items {
-  margin-top: 8px;
-}
-.item {
-  background: #e0f7ff;
-  border-radius: 20px;
-  padding: 12px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-  position: relative;
-}
-.item h2 {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #111827;
-}
-/* ชื่อสินค้า + หมวดหมู่: 3:2 สัดส่วน */
-.item-grid.header {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-/* หลัก: Amount | Unit | Price | Total */
-.item-grid.main {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 8px;
-}
-/* รอง: In unit | Sec Unit | Remarks */
-.item-grid.secondary {
-  display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.item-grid input {
-  height: 32px;
-  padding: 0 8px;
-  font-size: 13px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background: #ffffff;
-}
-.remove {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 4px 8px;
-  cursor: pointer;
-}
-
-/* ============================
-   5. ปุ่มด้านล่าง
-   ============================ */
-.btn-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-#add-item {
-  flex: 0 0 auto;
-  background: #ffdb4d;
-  color: #111827;
-  border: none;
-  border-radius: 12px;
-  padding: 10px;
-  font-size: 16px;
-  cursor: pointer;
-}
-#submit {
-  flex: 1 1 auto;
-  background: #4d83ff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 10px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-/* ============================
-   6. Responsive for iPhone
-   ============================ */
-@media (max-width: 480px) {
-  .container {
-    margin: 8px;
-    padding: 8px;
-    max-width: 100%;
+  /* 1. วันที่ + แหล่งที่ซื้อ ลด gap และปรับสัดส่วน */
+  .form-row .form-group {
+    flex: 1 1 calc(40% - 4px);    /* ช่องละ ~48% ลบ gap เล็กน้อย */
   }
-  .form-row {
-    flex-direction: column;
-    gap: 6px;
-  }
+
+  /* 2. ชื่อสินค้า + หมวดหมู่ (header) ลดช่องว่างระหว่างคอลัมน์ */
   .item-grid.header {
-    /* ยังคงสองคอลัมน์ 3:2 */
-    grid-template-columns: 3fr 2fr;
+    gap: 4px;            /* ช่องว่างน้อยลง */
   }
-  .item-grid.main {
-    grid-template-columns: repeat(2, 1fr);
-  }
+
+  /* 3. แถวหลัก & รอง (main, secondary) ลดช่องว่าง */
+  .item-grid.main,
   .item-grid.secondary {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;            /* ช่องว่างน้อยลง */
   }
+
+  /* 4. ปรับขนาดและ padding ของ input ให้สูงน้อยลง */
+  .item-grid input,
+  .form-group input {
+    padding: 4px 6px;          /* เบากว่าเดิม */
+    font-size: 12px;          /* เล็กลงนิดหน่อย */
+    height: 28px;            /* สูงลดลง */
+  }
+
+  /* 5. ปุ่มด้านล่าง ลด gap และย่อตัวอักษร */
   .btn-row {
-    flex-direction: column;
-    gap: 6px;
+    gap: 4px;            /* ช่องว่างเล็กลง */
   }
   #add-item,
   #submit {
-    width: 100%;
-    font-size: 14px;
-    padding: 8px;
+    padding: 8px;          /* สูงลดลง */
+    font-size: 14px;          /* ตัวอักษรเล็กลงเล็กน้อย */
   }
-  h1 {
+  /* ============================
+   4. Card รายการสินค้า
+   ============================ */
+  .items {
+    margin-top: 8px;
+  }
+  .item {
+    background: #e0f7ff;
+    border-radius: 20px;
+    padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .item h2 {
     font-size: 18px;
-    margin-bottom: 10px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #111827;
   }
-}
+  /* ชื่อสินค้า + หมวดหมู่: 3:2 สัดส่วน */
+  .item-grid.header {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* หลัก: Amount | Unit | Price | Total */
+  .item-grid.main {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* รอง: In unit | Sec Unit | Remarks */
+  .item-grid.secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .item-grid input {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .remove {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  /* ============================
+   5. ปุ่มด้านล่าง
+   ============================ */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  #add-item {
+    flex: 0 0 auto;
+    background: #ffdb4d;
+    color: #111827;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #submit {
+    flex: 1 1 auto;
+    background: #4d83ff;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* ============================
+   6. Responsive for iPhone
+   ============================ */
+  @media (max-width: 480px) {
+    .container {
+      margin: 8px;
+      padding: 12px; /* Adjust padding */
+      max-width: 100%;
+      border-radius: 16px; /* Slightly reduced border-radius */
+    }
+    h1 {
+      font-size: 18px; /* Smaller font size */
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom-width: 3px; /* Thinner border */
+    }
+    .form-row {
+      flex-direction: column;
+      gap: 8px; /* Increased gap */
+    }
+    .form-row .form-group {
+      flex: 1 1 100%; /* Full width for each form group */
+    }
+    .item-grid.header {
+      grid-template-columns: 1fr 1fr; /* Equal columns */
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .item-grid.main {
+      grid-template-columns: 1fr 1fr; /* Two columns */
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .item-grid.secondary {
+      grid-template-columns: 1fr; /* One column */
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .item-grid input,
+    .form-group input {
+      padding: 6px 8px; /* Slightly increased padding */
+      font-size: 14px; /* Slightly larger font size */
+      height: 36px; /* Slightly increased height */
+      border-radius: 8px; /* Slightly reduced border-radius */
+    }
+    .item h2 {
+      font-size: 16px; /* Smaller font size */
+      margin-bottom: 6px;
+    }
+    .remove {
+      font-size: 12px; /* Smaller font size */
+      padding: 3px 6px;
+      border-radius: 8px;
+      top: 8px;
+      right: 8px;
+    }
+    .btn-row {
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    #add-item,
+    #submit {
+      width: 100%;
+      font-size: 16px; /* Slightly larger font size */
+      padding: 10px;
+      border-radius: 10px; /* Slightly reduced border-radius */
+    }
+  }
 </style>
 
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
