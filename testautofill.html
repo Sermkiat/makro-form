@@ -5,53 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>บันทึกบิล / รายจ่าย</title>
   <style>
-    /* CSS: ตั้งค่าสไตล์พื้นฐาน */
+    /* CSS: ตั้งค่าสไตล์พื้นฐานและการ์ดรายการ */
     body { background-color: #e0f2fe; font-family: 'Noto Sans', sans-serif; margin: 0; padding: 20px; }
-    .container {
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      color: #111827;
-    }
+    .container { background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); max-width: 800px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 24px; margin-bottom: 24px; display: flex; align-items: center; color: #111827; }
     h1::before { content: '🧾'; margin-right: 8px; font-size: 24px; }
     .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
     .form-row .form-group { flex: 1 1 200px; }
-    label {
-      display: flex;
-      align-items: center;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #374151;
-    }
-    input, textarea, select {
-      width: 100%; padding: 8px; font-size: 14px;
-      border: 1px solid #d1d5db; border-radius: 4px; background: #fafafa; box-sizing: border-box;
-    }
+    label { display: flex; align-items: center; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    input, textarea, select { width: 100%; padding: 8px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 4px; background: #fafafa; box-sizing: border-box; }
     .items { margin-top: 32px; }
-    .item {
-      background: #ffffff; border: 1px solid #e5e7eb;
-      border-radius: 6px; padding: 16px; margin-bottom: 16px; position: relative;
+    .item { /* การ์ดรายการสินค้า */
+      background: #ffffff;
+      border: 1px solid #ccc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
     }
+    .item h2 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; color: #111827; }
     .item h2::before { content: '📌'; margin-right: 8px; }
-    .remove {
-      position: absolute; top: 16px; right: 16px;
-      background: #ef4444; color: white; border: none;
-      border-radius: 4px; padding: 4px 8px; cursor: pointer;
-    }
-    #add-item, #submit {
-      margin-top: 16px; padding: 10px; border-radius: 4px;
-      cursor: pointer; font-size: 16px;
-    }
+    .item-index { font-weight: bold; }
+    .remove { position: absolute; top: 16px; right: 16px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+    #add-item, #submit { margin-top: 16px; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 16px; }
     #add-item { background: #fbbf24; color: white; border: none; }
     #submit { background: #3b82f6; color: white; border: none; width: 100%; }
   </style>
@@ -71,16 +48,16 @@
         <input type="text" id="supplier" list="supplierlist" placeholder="เลือกแหล่งที่ซื้อ">
       </div>
     </div>
-    <!-- พื้นที่รายการสินค้า -->
+    <!-- พื้นที่รายการสินค้าแบบไดนามิก -->
     <div class="items" id="items-container"></div>
     <!-- ปุ่มเพิ่มรายการและบันทึก -->
     <button id="add-item">+ เพิ่มรายการใหม่</button>
     <button id="submit">บันทึกข้อมูลทั้งหมด</button>
   </div>
 
-  <!-- datalist ชื่อสินค้าเพื่อ autofill -->
+  <!-- datalist สำหรับ autofill ชื่อสินค้า -->
   <datalist id="namelist"></datalist>
-  <!-- ชื่อร้านค้าแนะนำ -->
+  <!-- datalist แนะนำแหล่งที่ซื้อ -->
   <datalist id="supplierlist">
     <option value="Makro">
     <option value="Tops">
@@ -89,10 +66,10 @@
     <option value="Shopee">
   </datalist>
 
-  <!-- Template ของรายการแต่ละแถว -->
+  <!-- Template แถวสินค้า: มีการแสดงหมายเลขรายการที่ .item-index -->
   <template id="item-template">
     <div class="item">
-      <h2>รายการ</h2>
+      <h2>รายการที่ <span class="item-index">1</span></h2>
       <div class="form-row">
         <div class="form-group">
           <label>รายการที่ซื้อ</label>
@@ -132,43 +109,51 @@
   <script>
     // Google Apps Script API endpoint
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
-    // เก็บ state ระหว่างการ reload เพื่อป้องกันประกาศตัวแปรซ้ำ
+    // เก็บ state เพื่อป้องกันประกาศตัวแปรซ้ำบน reload
     window.savedState = window.savedState || { dataList: [], totalItems: 0, savedCount: 0 };
 
-    /**
-     * loadData: โหลดข้อมูลรายการสินค้าจาก Google Sheet
-     */
+    /** โหลดข้อมูลสินค้าและเติมใน datalist */
     function loadData() {
-      const scriptTag = document.createElement('script');
-      scriptTag.src = apiURL + '?sheet=marketlist&callback=handleData';
-      document.body.appendChild(scriptTag);
+      const tag = document.createElement('script');
+      tag.src = apiURL + '?sheet=marketlist&callback=handleData';
+      document.body.appendChild(tag);
     }
 
-    /**
-     * handleData: ประมวลผลข้อมูลสินค้าจาก JSONP แล้วเติมลง datalist
-     */
+    /** ดึงกลับข้อมูลสินค้า JSONP แล้วเติมใน datalist */
     function handleData(data) {
       window.savedState.dataList = data;
-      const listEl = document.getElementById('namelist');
-      listEl.innerHTML = '';
+      const dl = document.getElementById('namelist');
+      dl.innerHTML = '';
       data.forEach(item => {
         const opt = document.createElement('option');
         opt.value = item.name;
-        listEl.appendChild(opt);
+        dl.appendChild(opt);
+      });
+      // อัปเดตรายการที่มีอยู่ให้แม่นยำ
+      updateItemIndices();
+    }
+
+    /** เพิ่มแถวรายการใหม่และอัปเดตรายการที่ */
+    function addItemRow() {
+      const cont = document.getElementById('items-container');
+      const clone = document.getElementById('item-template').content.cloneNode(true);
+      // ผูกปุ่มลบ พร้อมอัปเดตรายการที่
+      clone.querySelector('.remove').addEventListener('click', (e) => {
+        e.target.closest('.item').remove();
+        updateItemIndices();
+      });
+      cont.appendChild(clone);
+      updateItemIndices();
+    }
+
+    /** อัปเดตหมายเลขรายการให้แถวทุกตัว */
+    function updateItemIndices() {
+      document.querySelectorAll('.item').forEach((el, idx) => {
+        el.querySelector('.item-index').textContent = idx + 1;
       });
     }
 
-    /**
-     * addItemRow: สร้างแถวรายการสินค้าใหม่จาก template
-     */
-    function addItemRow() {
-      const container = document.getElementById('items-container');
-      const clone = document.getElementById('item-template').content.cloneNode(true);
-      clone.querySelector('.remove').addEventListener('click', (e) => e.target.closest('.item').remove());
-      container.appendChild(clone);
-    }
-
-    // จับ event input เพื่อ autofill และคำนวณราคารวม
+    // ผูก input event สำหรับ autofill และคำนวณราคารวม
     document.getElementById('items-container').addEventListener('input', (e) => {
       const row = e.target.closest('.item');
       if (e.target.classList.contains('name')) {
@@ -192,9 +177,7 @@
     // ผูกปุ่มเพิ่มรายการ
     document.getElementById('add-item').addEventListener('click', addItemRow);
 
-    /**
-     * submitData: ตรวจสอบฟอร์ม, แสดง preview ใบเสร็จ และส่งข้อมูลรายการไป Google Sheet
-     */
+    /** ตรวจสอบฟอร์ม, preview, และบันทึกข้อมูล */
     document.getElementById('submit').addEventListener('click', () => {
       const dateBill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
@@ -217,12 +200,10 @@
         Swal.fire('ไม่มีรายการ', 'ต้องกรอกอย่างน้อย 1 รายการที่มีจำนวน', 'warning');
         return;
       }
+      // สร้าง receipt preview
       let receiptHtml = `<div style="text-align:left; font-size:13px;">🧾 <strong>ใบเสร็จ</strong><br>วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
-      items.forEach(it => {
-        receiptHtml += `${it.nm} (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`;
-      });
+      items.forEach(it => receiptHtml += `${it.nm} (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`);
       receiptHtml += `<hr><em>รวม ${items.reduce((sum, i) => sum + parseFloat(i.to || 0), 0).toFixed(2)} บาท</em></div>`;
-
       Swal.fire({ title: 'ตรวจสอบข้อมูล', html: receiptHtml, width: 320, showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'แก้ไข' })
         .then(result => {
           if (result.isConfirmed) {
@@ -237,18 +218,15 @@
         });
     });
 
-    /**
-     * handleSubmit: callback ของ JSONP เพื่อเช็คว่าทุกรายการบันทึกครบแล้ว
-     */
+    /** callback JSONP เมื่อบันทึกเสร็จแต่ละรายการ */
     function handleSubmit(msg) {
       window.savedState.savedCount++;
       if (window.savedState.savedCount >= window.savedState.totalItems) {
-        Swal.close();
-        Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย', 'success');
+        Swal.close(); Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย', 'success');
       }
     }
 
-    // เริ่มต้นโหลดข้อมูลและสร้างแถวแรก
+    // เริ่มต้นโหลดข้อมูลสินค้าและเพิ่มแถวแรก
     loadData();
     addItemRow();
   </script>
