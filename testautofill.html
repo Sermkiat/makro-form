@@ -347,12 +347,23 @@
         return Swal.fire('ไม่มีรายการ', 'ต้องกรอกอย่างน้อย 1 รายการที่มีจำนวน', 'warning');
       }
       // สร้าง HTML preview ใบเสร็จ
-      let receiptHtml = `<div style="text-align:left; font-size:13px;">🧾 <strong>ใบเสร็จ</strong><br>วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
+      let receiptHtml = `<div style="text-align:left; font-size:13px;">🧾 <strong>ใบเสร็จ</strong><br>
+      วันที่: ${dateBill}<br>
+      ร้าน: ${supplier}
+      <hr>
+      `;
       items.forEach(it => {
-        receiptHtml += `${it.nm} (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`;
+        receiptHtml += `
+          <strong>${it.nm}</strong> (${it.gr})<br>
+          ${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>
+        `;
       });
       const totalSum = items.reduce((sum, i) => sum + parseFloat(i.to || 0), 0).toFixed(2);
-      receiptHtml += `<hr><em>รวม ${totalSum} บาท</em></div>`;
+      receiptHtml += `
+            <hr>
+            <em>รวม ${totalSum} บาท</em>
+            </div>
+      `;
 
       Swal.fire({
         title: 'ตรวจสอบข้อมูล',
