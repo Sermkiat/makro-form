@@ -69,20 +69,17 @@
       <h2>รายการที่ <span class="item-index">1</span></h2>
       <div class="item-grid header">
         <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" />
-        <input type="text" class="group" list="grouplist" placeholder="หมวดหมู่สินค้า" />
+        <input type="text" class="group" placeholder="หมวดหมู่สินค้า" readonly />
       </div>
-      <datalist id="grouplist">
-        <option value="กับข้าว"><option value="กินข้าว กินขนม"><option value="ของใช้ในบ้าน"><option value="ของเล่น/ใช้พราว"><option value="ของใช้ส่วนตัว"><option value="ยา"><option value="เที่ยว/พักผ่อน"><option value="งานซ่อม"><option value="งานสร้าง">
-      </datalist>
       <div class="item-grid main">
-        <input type="number" class="amount" placeholder="จำนวน" required />
-        <input type="text" class="unit" placeholder="หน่วย" required />
-        <input type="number" class="price_unit" step="0.01" placeholder="ราคาต่อหน่วย" required />
+        <input type="number" class="amount" placeholder="จำนวน" required inputmode="numeric" pattern="[0-9]*" />
+        <input type="text" class="unit" placeholder="หน่วย" readonly />
+        <input type="number" class="price_unit" step="0.01" placeholder="ราคาต่อหน่วย" required inputmode="decimal" />
         <input type="text" class="total" readonly placeholder="รวม" />
       </div>
       <div class="item-grid secondary">
-        <input type="text" class="in_unit" placeholder="หน่วยย่อย" />
-        <input type="text" class="sec_unit" placeholder="หน่วยสำรอง" />
+        <input type="text" class="in_unit" placeholder="หน่วยย่อย" readonly />
+        <input type="text" class="sec_unit" placeholder="หน่วยสำรอง" readonly />
         <input type="text" class="note" placeholder="หมายเหตุ" />
       </div>
       <button type="button" class="remove">ลบ</button>
@@ -92,79 +89,124 @@
   <script>
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
     const state = { total: 0, saved: 0 };
+    let productList;
+
     function loadData() {
       const tag = document.createElement('script');
       tag.src = `${apiURL}?sheet=marketlist&callback=handleData`;
       document.body.appendChild(tag);
     }
+
     function handleData(data) {
-      const dl = document.getElementById('namelist'); dl.innerHTML = '';
-      data.forEach(i=> dl.appendChild(Object.assign(document.createElement('option'),{value:i.name})));
+      productList = data;
+      const dl = document.getElementById('namelist');
+      dl.innerHTML = '';
+      data.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        dl.appendChild(opt);
+      });
       addItemRow();
     }
+
     function addItemRow() {
       const cont = document.getElementById('items-container');
       const clone = document.getElementById('item-template').content.cloneNode(true);
-      clone.querySelector('.remove').onclick = e=>{e.target.closest('.item').remove(); updateIndices();};
+      const nameInput = clone.querySelector('.name');
+      nameInput.addEventListener('change', () => {
+        const sel = productList.find(p => p.name === nameInput.value);
+        if (sel) {
+          const row = nameInput.closest('.item');
+          row.querySelector('.group').value = sel.group || '';
+          row.querySelector('.unit').value = sel.unit || '';
+          row.querySelector('.in_unit').value = sel.in_unit || '';
+          row.querySelector('.sec_unit').value = sel.sec_unit || '';
+        }
+      });
+      clone.querySelector('.remove').onclick = e => { e.target.closest('.item').remove(); updateIndices(); };
       cont.appendChild(clone);
       updateIndices();
     }
+
     function updateIndices() {
-      document.querySelectorAll('.item').forEach((el,i)=>el.querySelector('.item-index').textContent=i+1);
+      document.querySelectorAll('.item').forEach((el, idx) => {
+        el.querySelector('.item-index').textContent = idx + 1;
+      });
     }
-    document.getElementById('items-container').addEventListener('input', e=>{
-      if(e.target.matches('.amount, .price_unit')){
-        const row=e.target.closest('.item');
-        const a=parseFloat(row.querySelector('.amount').value)||0;
-        const p=parseFloat(row.querySelector('.price_unit').value)||0;
-        row.querySelector('.total').value=(a*p).toFixed(2);
+
+    document.getElementById('items-container').addEventListener('input', e => {
+      if (e.target.matches('.amount, .price_unit')) {
+        const row = e.target.closest('.item');
+        const a = parseFloat(row.querySelector('.amount').value) || 0;
+        const p = parseFloat(row.querySelector('.price_unit').value) || 0;
+        row.querySelector('.total').value = (a * p).toFixed(2);
       }
     });
-    document.getElementById('add-item').onclick=addItemRow;
-    document.getElementById('billForm').onsubmit=e=>{
+
+    document.getElementById('add-item').onclick = addItemRow;
+    document.getElementById('billForm').onsubmit = e => {
       e.preventDefault();
-      if(!e.target.checkValidity()){e.target.reportValidity();return;}
-      const date=document.getElementById('date_bill').value;
-      const sup=document.getElementById('supplier').value;
-      const items=[];
-      document.querySelectorAll('.item').forEach(r=>{
-        if(!r.querySelector('.amount').value) return;
+      if (!e.target.checkValidity()) { e.target.reportValidity(); return; }
+      const date = document.getElementById('date_bill').value;
+      const sup = document.getElementById('supplier').value;
+      const items = [];
+      document.querySelectorAll('.item').forEach(r => {
+        if (!r.querySelector('.amount').value) return;
         items.push({
-          nm:r.querySelector('.name').value,
-          gr:r.querySelector('.group').value,
-          am:r.querySelector('.amount').value,
-          un:r.querySelector('.unit').value,
-          pu:r.querySelector('.price_unit').value,
-          to:r.querySelector('.total').value,
-          in_unit:r.querySelector('.in_unit').value,
-          sec_unit:r.querySelector('.sec_unit').value,
-          note:r.querySelector('.note').value
+          nm: r.querySelector('.name').value,
+          gr: r.querySelector('.group').value,
+          am: r.querySelector('.amount').value,
+          un: r.querySelector('.unit').value,
+          pu: r.querySelector('.price_unit').value,
+          to: r.querySelector('.total').value,
+          in_unit: r.querySelector('.in_unit').value,
+          sec_unit: r.querySelector('.sec_unit').value,
+          note: r.querySelector('.note').value
         });
       });
-      if(!items.length){Swal.fire('ไม่มีรายการ','ต้องกรอกอย่างน้อยหนึ่งรายการ','warning');return;}
-      let html=`<div style="text-align:left;font-size:13px;">🧾<strong>ใบเสร็จ</strong><br>วันที่: ${date}<br>ร้าน: ${sup}<hr>`;
-      html+=items.map(it=>`<strong>${it.nm}</strong><br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท`).join('<br>');
-      html+=`<hr><em>รวม ${items.reduce((s,x)=>s+parseFloat(x.to),0).toFixed(2)} บาท</em></div>`;
-      Swal.fire({title:'ตรวจสอบ',html,showCancelButton:!0,confirmButtonText:'ยืนยัน'}).then(r=>{if(r.isConfirmed){
-        state.total=items.length;state.saved=0;Swal.fire({title:'กำลังบันทึก',allowOutsideClick:!1,didOpen:()=>Swal.showLoading()});
-        items.forEach(it=>{
-          const qs=`?sheet=datalog&date_bill=${encodeURIComponent(date)}`+
-                  `&supplier=${encodeURIComponent(sup)}`+
-                  `&name=${encodeURIComponent(it.nm)}`+
-                  `&unit=${encodeURIComponent(it.un)}`+
-                  `&group=${encodeURIComponent(it.gr)}`+
-                  `&amount=${encodeURIComponent(it.am)}`+
-                  `&price_unit=${encodeURIComponent(it.pu)}`+
-                  `&total=${encodeURIComponent(it.to)}`+
-                  `&in_unit=${encodeURIComponent(it.in_unit)}`+
-                  `&sec_unit=${encodeURIComponent(it.sec_unit)}`+
-                  `&note=${encodeURIComponent(it.note)}`+
-                  `&callback=handleSubmit`;
-          const s=document.createElement('script');s.src=apiURL+qs;document.body.appendChild(s);
+      if (!items.length) { Swal.fire('ไม่มีรายการ','ต้องกรอกอย่างน้อยหนึ่งรายการ','warning'); return; }
+      let html = `<div style="text-align:left;font-size:13px;">🧾<strong>ใบเสร้อข้าว</strong><br>วันที่: ${date}<br>ร้าน: ${sup}<hr>`;
+      html += items.map(it => `<strong>${it.nm}</strong><br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท`).join('<br>');
+      html += `<hr><em>รวม ${items.reduce((sum, x) => sum + parseFloat(x.to),0).toFixed(2)} บาท</em></div>`;
+      Swal.fire({ title: 'ตรวจสอบ', html, showCancelButton: true, confirmButtonText: 'ยืนยัน' })
+        .then(res => {
+          if (res.isConfirmed) {
+            state.total = items.length;
+            state.saved = 0;
+            Swal.fire({ title: 'กำลังบันทึก', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            items.forEach(it => {
+              const qs = `?sheet=datalog&date_bill=${encodeURIComponent(date)}` +
+                         `&supplier=${encodeURIComponent(sup)}` +
+                         `&name=${encodeURIComponent(it.nm)}` +
+                         `&unit=${encodeURIComponent(it.un)}` +
+                         `&group=${encodeURIComponent(it.gr)}` +
+                         `&amount=${encodeURIComponent(it.am)}` +
+                         `&price_unit=${encodeURIComponent(it.pu)}` +
+                         `&total=${encodeURIComponent(it.to)}` +
+                         `&in_unit=${encodeURIComponent(it.in_unit)}` +
+                         `&sec_unit=${encodeURIComponent(it.sec_unit)}` +
+                         `&note=${encodeURIComponent(it.note)}` +
+                         `&callback=handleSubmit`;
+              const scriptTag = document.createElement('script');
+              scriptTag.src = apiURL + qs;
+              document.body.appendChild(scriptTag);
+            });
+          }
         });
-      }});
     };
-    function handleSubmit(msg){state.saved++;if(state.saved>=state.total){Swal.close();Swal.fire('สำเร็จ','บันทึกแล้ว','success').then(()=>{document.getElementById('billForm').reset();document.getElementById('items-container').innerHTML='';addItemRow();});}}
+
+    function handleSubmit(msg) {
+      state.saved++;
+      if (state.saved >= state.total) {
+        Swal.close();
+        Swal.fire('สำเร็จ','บันทึกแล้ว','success').then(() => {
+          document.getElementById('billForm').reset();
+          document.getElementById('items-container').innerHTML = '';
+          addItemRow();
+        });
+      }
+    }
+
     loadData();
   </script>
 </body>
