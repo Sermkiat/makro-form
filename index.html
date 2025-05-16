@@ -39,7 +39,7 @@
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
 
     async function fetchData() {
       const res = await fetch(API_URL);
@@ -81,7 +81,7 @@
 
     async function updateDashboard() {
       try {
-        const { IncomeLog, MakroLog } = await fetchData();
+        const { IncomeLog, datalog } = await fetchData();
 
         // รายรับ
         const incRows = IncomeLog.slice(1).map(r => [r[0], r[1]]);
@@ -90,7 +90,7 @@
         document.getElementById('incomeLastMonth').   textContent = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
 
         // รายจ่าย
-        const expRows = MakroLog.slice(1).map(r => [r[0], r[7]]);
+        const expRows = datalog.slice(1).map(r => [r[0], r[7]]);
         const [eThis, eLast] = calculateMonthlyTotals(expRows);
         document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
         document.getElementById('expenseLastMonth').   textContent = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
