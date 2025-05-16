@@ -395,6 +395,9 @@
         วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
       items.forEach(it => {
         receiptHtml += `<strong>${it.nm}</strong> (${it.gr})<br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท<br>`;
+      if (it.in_unit || it.sec_unit) {
+        receiptHtml += `<small>[หน่วยย่อย: ${it.in_unit || '-'} | หน่วยสำรอง: ${it.sec_unit || '-'}]</small><br>`;
+      }
       });
       const totalSum = items.reduce((sum, i) => sum + parseFloat(i.to||0), 0).toFixed(2);
       receiptHtml += `<hr><em>รวม ${totalSum} บาท</em></div>`;
