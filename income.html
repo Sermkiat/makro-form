@@ -1,42 +1,112 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>บันทึกรายรับประจำวัน</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ==========================
+       UI Styling เหมือน expense.html
+    ========================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #5fa0ff; font-family: 'Noto Sans', sans-serif;
+           display: flex; justify-content: center; align-items: flex-start;
+           min-height: 100vh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; }
+    .container {
+      background: #ffffff;
+      border: 3px solid #c2e7ff;
+      border-radius: 24px;
+      width: 100%; max-width: 420px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 4px solid #c2e7ff;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    .form-group input {
+      width: 100%; padding: 10px;
+      font-size: 14px; height: 40px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .btn-submit {
+      margin-top: 12px;
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      color: #fff;
+      background: #10b981;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-submit:hover {
+      background: #0f9b75;
+    }
+    .menu-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn-nav {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      text-align: center;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+    .btn-blue { background: #3b82f6; }
+    .btn-yellow { background: #ffdb4d; color: #111827; }
+    .btn-purple { background: #8b3ced; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="max-w-md mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">💵 บันทึกรายรับประจำวัน</h1>
-    <form id="incomeForm" class="bg-white p-6 rounded shadow space-y-4">
-      <div>
-        <label class="block font-medium">📅 วันที่</label>
-        <input type="date" name="date" required class="w-full border p-2 rounded"/>
+<body>
+  <div class="container">
+    <h1>💵 บันทึกรายรับประจำวัน</h1>
+    <form id="incomeForm" novalidate>
+      <div class="form-group">
+        <label>📅 วันที่</label>
+        <input type="date" name="date" required />
       </div>
-      <div>
-        <label class="block font-medium">💰 ยอดขาย</label>
-        <input type="number" name="amount" step="0.01" min="0" required class="w-full border p-2 rounded"/>
+      <div class="form-group">
+        <label>💰 ยอดขาย</label>
+        <input type="number" name="amount" step="0.01" min="0" required inputmode="decimal" />
       </div>
-      <div class="pt-4">
-        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          ✅ บันทึกรายรับ
-        </button>
-      </div>
+      <button type="submit" class="btn-submit">✅ บันทึกรายรับ</button>
     </form>
-    <div class="mt-6 flex gap-4">
-      <a href="index.html"     class="text-blue-700 underline">🔙 หน้าหลัก</a>
-      <a href="dashboard.html" class="text-purple-700 underline">📊 Dashboard</a>
-      <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit"
-         target="_blank" class="text-green-700 underline">📄 Google Sheet</a>
-    </div>
+    <nav class="menu-links">
+      <a href="index.html" class="btn-nav btn-blue">🏠 Home</a>
+      <a href="expense.html" class="btn-nav btn-yellow">🧾 Expense</a>
+      <a href="dashboard.html" class="btn-nav btn-purple">📊 Dashboard</a>
+    </nav>
   </div>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec';
 
-    // JSONP helper
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
         window[cbName] = result => {
@@ -58,7 +128,7 @@
 
     document.getElementById('incomeForm').addEventListener('submit', async e => {
       e.preventDefault();
-      const date   = e.target.date.value;
+      const date = e.target.date.value;
       const amount = e.target.amount.value;
 
       Swal.fire({
@@ -74,7 +144,7 @@
           Swal.fire('สำเร็จ','บันทึกรายรับเรียบร้อย','success')
             .then(() => location.href = 'index.html');
         } else {
-          Swal.fire('ผิดพลาด', resp.message||'ไม่สำเร็จ','error');
+          Swal.fire('ผิดพลาด', resp.message || 'ไม่สำเร็จ','error');
         }
       } catch {
         Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
