@@ -49,19 +49,6 @@
     padding-bottom: 10px; /* Increased padding */
     border-bottom: 4px solid #c2e7ff; /* เส้นขอบล่างหัวเรื่อง */
   }
-    <!-- ปุ่มด้านล่าง -->
-  <div class="btn-row">
-    <button id="add-item">+ เพิ่มรายการใหม่</button>
-    <button id="submit">บันทึกข้อมูลทั้งหมด</button>
-  </div>
-
-  <!-- ✅ เมนูด้านล่างอยู่ใน container -->
-  <nav class="menu-links">
-    <a href="index.html">🏠 หน้าหลัก</a>
-    <a href="income.html">💸 บันทึกรายรับ / ยอดขาย</a>
-    <a href="dashboard.html">📊 ดู Dashboard</a>
-  </nav>
-</div>
 
   /* ============================
     3. Form Elements & Layout
@@ -249,27 +236,6 @@
       height: 40px;
     }
   }
-  .menu-links {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
-  font-size: 14px;
-  color: #444;
-  background-color: transparent;
-}
-.menu-links a {
-  color: #1e40af;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-.menu-links a:hover {
-  background-color: #e0f2fe;
-  text-decoration: underline;
-}
 </style>
   <!-- SweetAlert2 สำหรับ popup ยืนยัน -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -341,19 +307,7 @@
       <button class="remove">ลบ</button>
     </div>
   </template>
-    <!-- เมนู -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <a href="index.html" class="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 text-center">
-        🏠 หน้าหลัก
-      </a>
-      <a href="income.html" class="bg-green-500 text-white p-4 rounded shadow hover:bg-green-600 text-center">
-        💵 บันทึกรายรับ / ยอดขาย
-      </a>
-      <a href="dashboard.html" class="bg-purple-500 text-white p-4 rounded shadow hover:bg-purple-600 text-center">
-        📊 ดู Dashboard
-      </a>
-    </div>
-  </div>
+
   <script>
     const apiURL = 'https://script.google.com/macros/s/AKfycbzez-fh075oK0A8-JxKz2sozwPLj2uF9jrpPLA_Mq0707SVhi2pp_FIa0NOfYe8EM8aYA/exec';
     window.savedState = window.savedState || { dataList: [], totalItems: 0, savedCount: 0 };
