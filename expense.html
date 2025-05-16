@@ -415,13 +415,13 @@
                   document.getElementById('date_bill').valueAsDate = new Date();
                   addItemRow();
                 });
+            
             } else {
               Swal.fire('เกิดข้อผิดพลาด', result.message || 'ไม่สามารถบันทึกได้', 'error');
             }
           })
           .catch(error => {
             Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-});
           });
         }
       });
