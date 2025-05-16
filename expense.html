@@ -6,29 +6,45 @@
   <title>บันทึกบิล / รายจ่าย</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #5fa0ff; font-family: 'Noto Sans', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; }
-    .container { background: #fff; border: 3px solid #c2e7ff; border-radius: 24px; width: 100%; max-width: 420px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    h1 { font-size: 20px; text-align: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 4px solid #c2e7ff; }
+    body { background: #5fa0ff; font-family: 'Noto Sans', sans-serif;
+           display: flex; justify-content: center; align-items: flex-start;
+           min-height: 100vh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; }
+    .container { background: #fff; border: 3px solid #c2e7ff; border-radius: 24px;
+                 width: 100%; max-width: 420px; padding: 16px;
+                 box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 16px;
+         padding-bottom: 10px; border-bottom: 4px solid #c2e7ff; }
     .form-row { display: flex; gap: 12px; margin-bottom: 16px; }
     .form-group { flex: 1; display: flex; flex-direction: column; }
     .form-group label { margin-bottom: 4px; font-weight: 500; }
-    .form-group input { width: 100%; padding: 10px; font-size: 14px; height: 40px; border: 1px solid #ccc; border-radius: 8px; }
+    .form-group input { width: 100%; padding: 10px; font-size: 14px;
+                         height: 40px; border: 1px solid #ccc; border-radius: 8px; }
     .items { margin-top: 16px; }
-    .item { background: #e0f7ff; border-radius: 16px; padding: 12px; margin-bottom: 16px; position: relative; }
+    .item { background: #e0f7ff; border-radius: 16px; padding: 12px;
+             margin-bottom: 16px; position: relative; }
     .item h2 { font-size: 16px; font-weight: bold; margin-bottom: 12px; }
     .item-grid { display: grid; gap: 8px; margin-bottom: 12px; }
     .item-grid.header { grid-template-columns: 3fr 2fr; }
-    .item-grid.main { grid-template-columns: repeat(4, 1fr); }
+    .item-grid.main   { grid-template-columns: repeat(4, 1fr); }
     .item-grid.secondary { grid-template-columns: repeat(3, 1fr); }
-    .item-grid input { width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; }
-    .remove { position: absolute; top: 12px; right: 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+    .item-grid input { width: 100%; padding: 8px; font-size: 14px;
+                        border: 1px solid #ccc; border-radius: 6px; }
+    .remove { position: absolute; top: 12px; right: 12px;
+              background: #ef4444; color: #fff; border: none;
+              border-radius: 6px; padding: 4px 8px; cursor: pointer; }
     .btn-row { display: flex; gap: 12px; margin-top: 16px; }
-    button#add-item, button#submit { flex: 1; padding: 12px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; }
+    button#add-item, button#submit { flex: 1; padding: 12px;
+                                     font-size: 15px; border: none;
+                                     border-radius: 8px; cursor: pointer; }
     button#add-item { background: #ffdb4d; color: #111827; }
-    button#submit { background: #4d83ff; color: #fff; }
+    button#submit   { background: #4d83ff; color: #fff; }
     .menu-links { display: flex; gap: 12px; margin-top: 24px; }
-    .btn-nav { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; text-align: center; color: #fff; border-radius: 8px; text-decoration: none; }
-    .btn-blue { background: #3b82f6; } .btn-green { background: #10b981; } .btn-purple { background: #8b3ced; }
+    .btn-nav { flex: 1; padding: 12px; font-size: 15px;
+               font-weight: bold; text-align: center; color: #fff;
+               border-radius: 8px; text-decoration: none; }
+    .btn-blue   { background: #3b82f6; }
+    .btn-green  { background: #10b981; }
+    .btn-purple { background: #8b3ced; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -69,17 +85,23 @@
       <h2>รายการที่ <span class="item-index">1</span></h2>
       <div class="item-grid header">
         <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" />
-        <input type="text" class="group" placeholder="หมวดหมู่สินค้า" readonly />
+        <!-- Editable auto-fill -->
+        <input type="text" class="group" placeholder="หมวดหมู่สินค้า" />
       </div>
       <div class="item-grid main">
-        <input type="number" class="amount" placeholder="จำนวน" required inputmode="numeric" pattern="[0-9]*" />
-        <input type="text" class="unit" placeholder="หน่วย" readonly />
-        <input type="number" class="price_unit" step="0.01" placeholder="ราคาต่อหน่วย" required inputmode="decimal" />
+        <!-- จำนวน: ไม่ติดลบ -->
+        <input type="number" min="0" class="amount" placeholder="จำนวน" required inputmode="numeric" />
+        <!-- หน่วย: editable auto-fill -->
+        <input type="text" class="unit" placeholder="หน่วย" />
+        <!-- ราคาต่อหน่วย: ไม่ติดลบ -->
+        <input type="number" step="0.01" min="0" class="price_unit" placeholder="ราคาต่อหน่วย" required inputmode="decimal" />
         <input type="text" class="total" readonly placeholder="รวม" />
       </div>
       <div class="item-grid secondary">
-        <input type="text" class="in_unit" placeholder="หน่วยย่อย" readonly />
-        <input type="text" class="sec_unit" placeholder="หน่วยในหน่วย" readonly />
+        <!-- หน่วยย่อย: editable, ไม่ติดลบ -->
+        <input type="number" min="0" class="in_unit" placeholder="หน่วยย่อย" />
+        <!-- หน่วยในหน่วย: editable auto-fill -->
+        <input type="text" class="sec_unit" placeholder="หน่วยในหน่วย" />
         <input type="text" class="note" placeholder="หมายเหตุ" />
       </div>
       <button type="button" class="remove">ลบ</button>
@@ -102,8 +124,7 @@
       const dl = document.getElementById('namelist');
       dl.innerHTML = '';
       data.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.name;
+        const opt = document.createElement('option'); opt.value = item.name;
         dl.appendChild(opt);
       });
       addItemRow();
@@ -112,6 +133,7 @@
     function addItemRow() {
       const cont = document.getElementById('items-container');
       const clone = document.getElementById('item-template').content.cloneNode(true);
+      // auto-fill event
       const nameInput = clone.querySelector('.name');
       nameInput.addEventListener('change', () => {
         const sel = productList.find(p => p.name === nameInput.value);
@@ -119,19 +141,16 @@
           const row = nameInput.closest('.item');
           row.querySelector('.group').value = sel.group || '';
           row.querySelector('.unit').value = sel.unit || '';
-          row.querySelector('.in_unit').value = sel.in_unit || '';
+          row.querySelector('.in_unit').value = sel.in_unit || 0;
           row.querySelector('.sec_unit').value = sel.sec_unit || '';
         }
       });
       clone.querySelector('.remove').onclick = e => { e.target.closest('.item').remove(); updateIndices(); };
-      cont.appendChild(clone);
-      updateIndices();
+      cont.appendChild(clone); updateIndices();
     }
 
     function updateIndices() {
-      document.querySelectorAll('.item').forEach((el, idx) => {
-        el.querySelector('.item-index').textContent = idx + 1;
-      });
+      document.querySelectorAll('.item').forEach((el, idx) => el.querySelector('.item-index').textContent = idx+1);
     }
 
     document.getElementById('items-container').addEventListener('input', e => {
@@ -148,7 +167,7 @@
       e.preventDefault();
       if (!e.target.checkValidity()) { e.target.reportValidity(); return; }
       const date = document.getElementById('date_bill').value;
-      const sup = document.getElementById('supplier').value;
+      const sup  = document.getElementById('supplier').value;
       const items = [];
       document.querySelectorAll('.item').forEach(r => {
         if (!r.querySelector('.amount').value) return;
@@ -165,15 +184,14 @@
         });
       });
       if (!items.length) { Swal.fire('ไม่มีรายการ','ต้องกรอกอย่างน้อยหนึ่งรายการ','warning'); return; }
-      let html = `<div style="text-align:left;font-size:13px;">🧾<strong>ใบเสร้อข้าว</strong><br>วันที่: ${date}<br>ร้าน: ${sup}<hr>`;
+      let html = `<div style="text-align:left;font-size:13px;">🧾<strong>ใบเสร็จ</strong><br>วันที่: ${date}<br>ร้าน: ${sup}<hr>`;
       html += items.map(it => `<strong>${it.nm}</strong><br>${it.am} ${it.un} x ${it.pu} = ${it.to} บาท`).join('<br>');
-      html += `<hr><em>รวม ${items.reduce((sum, x) => sum + parseFloat(x.to),0).toFixed(2)} บาท</em></div>`;
-      Swal.fire({ title: 'ตรวจสอบ', html, showCancelButton: true, confirmButtonText: 'ยืนยัน' })
-        .then(res => {
-          if (res.isConfirmed) {
-            state.total = items.length;
-            state.saved = 0;
-            Swal.fire({ title: 'กำลังบันทึก', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      html += `<hr><em>รวม ${items.reduce((s,x) => s + parseFloat(x.to),0).toFixed(2)} บาท</em></div>`;
+      Swal.fire({ title:'ตรวจสอบ', html, showCancelButton:true, confirmButtonText:'ยืนยัน' })
+        .then(r => {
+          if (r.isConfirmed) {
+            state.total = items.length; state.saved = 0;
+            Swal.fire({ title:'กำลังบันทึก', allowOutsideClick:false, didOpen:()=> Swal.showLoading() });
             items.forEach(it => {
               const qs = `?sheet=datalog&date_bill=${encodeURIComponent(date)}` +
                          `&supplier=${encodeURIComponent(sup)}` +
@@ -187,9 +205,8 @@
                          `&sec_unit=${encodeURIComponent(it.sec_unit)}` +
                          `&note=${encodeURIComponent(it.note)}` +
                          `&callback=handleSubmit`;
-              const scriptTag = document.createElement('script');
-              scriptTag.src = apiURL + qs;
-              document.body.appendChild(scriptTag);
+              const script = document.createElement('script'); script.src = apiURL + qs;
+              document.body.appendChild(script);
             });
           }
         });
