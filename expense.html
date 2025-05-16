@@ -383,6 +383,8 @@
           am,
           pu: r.querySelector('.price_unit').value,
           to: r.querySelector('.total').value,
+          in_unit: r.qurerySelector('.in_unit').value
+          sec_unit: r.qurerySelector('.sec_unit').value
           note: r.querySelector('.note').value
         });
       });
@@ -418,6 +420,8 @@
                        `&amount=${encodeURIComponent(it.am)}` +
                        `&price_unit=${encodeURIComponent(it.pu)}` +
                        `&total=${encodeURIComponent(it.to)}` +
+                       `&in_unit=${encodeURIComponent(it.in_unit)}` +     //โป้แก้
+                       `&in_unit=${encodeURIComponent(it.sec_unit0}` +   //โป้แก้
                        `&note=${encodeURIComponent(it.note)}&callback=handleSubmit`;
             const sc = document.createElement('script'); sc.src = apiURL + qs; document.body.appendChild(sc);
           });
