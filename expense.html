@@ -264,7 +264,43 @@
       <button id="add-item">+ เพิ่มรายการใหม่</button>
       <button id="submit">บันทึกข้อมูลทั้งหมด</button>
     </div>
+
+    <!-- ✅ เมนูด้านล่างอยู่ใน container -->
+  <nav class="menu-links">
+    <a href="index.html" class="btn-nav btn-blue">🏠 หน้าหลัก</a>
+    <a href="income.html" class="btn-nav btn-green">💵 บันทึกรายรับ / ยอดขาย</a>
+    <a href="dashboard.html" class="btn-nav btn-purple">📊 ดู Dashboard</a>
+   </nav>
   </div>
+<!-- 🎨 เพิ่มสไตล์ให้เมนูแนวนอน อยู่ด้านล่าง container -->
+<style>
+.menu-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  justify-content: space-between;
+}
+.btn-nav {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: background 0.2s ease;
+}
+.btn-blue { background-color: #3b82f6; }
+.btn-green { background-color: #10b981; }
+.btn-purple { background-color: #8b5cf6; }
+.btn-blue:hover { background-color: #2563eb; }
+.btn-green:hover { background-color: #059669; }
+.btn-purple:hover { background-color: #7c3aed; }
+</style>
 
   <!-- datalist สำหรับ autocomplete -->
   <datalist id="namelist"></datalist>
@@ -306,6 +342,7 @@
 
       <button class="remove">ลบ</button>
     </div>
+        
   </template>
 
   <script>
