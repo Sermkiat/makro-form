@@ -391,31 +391,37 @@
             }
           });
 
-          // วนลูปส่งข้อมูลแต่ละรายการไปยัง Google Apps Script
-          itemsData.forEach((item, index) => {
-            // สร้าง Query String จากข้อมูลของ item
-            const queryString = `?sheet=datalog&date_bill=${encodeURIComponent(dateValue)}` +
-                                `&supplier=${encodeURIComponent(supplierValue)}` +
-                                `&name=${encodeURIComponent(item.nm)}` +
-                                `&unit=${encodeURIComponent(item.un)}` +
-                                `&group=${encodeURIComponent(item.gr)}` +
-                                `&amount=${encodeURIComponent(item.am)}` +
-                                `&price_unit=${encodeURIComponent(item.pu)}` +
-                                `&total=${encodeURIComponent(item.to)}` +
-                                `&in_unit=${encodeURIComponent(item.in_unit)}` +
-                                `&sec_unit=${encodeURIComponent(item.sec_unit)}` +
-                                `&note=${encodeURIComponent(item.note)}` +
-                                `&callback=handleSubmissionResponse`; // กำหนด callback function
-
-            const scriptTag = document.createElement('script');
-            scriptTag.src = apiURL + queryString;
-            // เพิ่ม error handling สำหรับ script tag (กรณี network error หรือ API error ที่ไม่ได้คืน JSONP)
-            scriptTag.onerror = () => {
-                console.error("Error loading script for item:", item.nm, scriptTag.src);
-                // อาจจะนับว่ารายการนี้ไม่สำเร็จ และอัปเดต UI หรือ state
-                handleSubmissionResponse({ success: false, message: `เกิดข้อผิดพลาดในการส่งข้อมูลรายการ ${item.nm}` });
-            };
-            document.body.appendChild(scriptTag);
+       // ใหม่: ส่งข้อมูลทั้งหมดด้วย fetch POST
+            fetch(apiURL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              sheet: 'datalog',
+              date_bill: dateValue,
+              supplier: supplierValue,
+              items: itemsData
+            })
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              Swal.fire('บันทึกสำเร็จ!', 'ข้อมูลทั้งหมดถูกบันทึกเรียบร้อยแล้ว', 'success')
+                .then(() => {
+                  // รีเซ็ตฟอร์มและเตรียมแถวใหม่
+                  document.getElementById('billForm').reset();
+                  document.getElementById('items-container').innerHTML = '';
+                  document.getElementById('date_bill').valueAsDate = new Date();
+                  addItemRow();
+                });
+            } else {
+              Swal.fire('เกิดข้อผิดพลาด', result.message || 'ไม่สามารถบันทึกได้', 'error');
+            }
+          })
+          .catch(error => {
+            Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+});
           });
         }
       });
