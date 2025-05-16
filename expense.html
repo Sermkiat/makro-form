@@ -338,10 +338,7 @@
       // วนลูปเก็บข้อมูลจากแต่ละแถวรายการสินค้า
       document.querySelectorAll('#items-container .item').forEach(rowElement => {
         // ตรวจสอบว่ามีการกรอกจำนวนหรือไม่ ถ้าไม่ ให้ข้ามรายการนี้ไป
-        const amountInput = rowElement.querySelector('.amount');
-        if (!amountInput.value || parseFloat(amountInput.value) <= 0) { // เพิ่มเงื่อนไขจำนวนต้องมากกว่า 0
-             // อาจจะแจ้งเตือนผู้ใช้ว่ามีรายการที่ข้อมูลไม่ครบถ้วน หรือแค่ข้ามไป
-            return;
+        const amountInput = rowElement.querySelector('.amount')
         }
 
         itemsData.push({
