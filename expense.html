@@ -59,7 +59,39 @@
   <datalist id="namelist"></datalist>
   <datalist id="supplierlist"><option value="Makro"><option value="7-eleven"><option value="Tops"><option value="Lotus"><option value="Lazada"><option value="Shopee"></datalist>
 
-  <template id="item-template"> … </template>
+  <template id="item-template">
+  <div class="item">
+    <h2>รายการที่ <span class="item-index">1</span></h2>
+
+    <!-- ชื่อสินค้า + หมวดหมู่ -->
+    <div class="item-grid header">
+      <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" />
+      <input type="text" class="group" list="grouplist" placeholder="หมวดหมู่สินค้า" />
+    </div>
+    <datalist id="grouplist">
+      <option value="กับข้าว"><option value="กินข้าว กินขนม"><option value="ของใช้ในบ้าน">
+      <option value="ของเล่น/ใช้พราว"><option value="ของใช้ส่วนตัว"><option value="ยา">
+      <option value="เที่ยว/พักผ่อน"><option value="งานซ่อม"><option value="งานสร้าง">
+    </datalist>
+
+    <!-- Amount | Unit | Price Unit | Total -->
+    <div class="item-grid main">
+      <input type="number" class="amount" placeholder="Amount" />
+      <input type="text"   class="unit"   placeholder="Unit" />
+      <input type="number" class="price_unit" step="0.01" placeholder="Price Unit" />
+      <input type="text"   class="total" readonly placeholder="Total" />
+    </div>
+
+    <!-- In unit | Sec Unit | Remarks -->
+    <div class="item-grid secondary">
+      <input type="text" class="in_unit" placeholder="In unit" />
+      <input type="text" class="sec_unit" placeholder="Sec Unit" />
+      <input type="text" class="note" placeholder="Remarks" />
+    </div>
+
+    <button class="remove">ลบ</button>
+  </div>
+  </template>
 
   <script>
     const apiURL = 'https://script.google.com/macros/s/…/exec';
