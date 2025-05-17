@@ -108,25 +108,7 @@
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxHBToBh3J0NHst9kKrDssUOcha4eXKHBF7-55WVROMwDqMCf-c-5ZwC_AiJVBQ5Zaz/exec';
     let productList = [];
 
-    // โหลดรายการสินค้า (suggestions) via Fetch
-    function loadProductData() {
-      fetch(`${WEB_APP_URL}?action=marketlist`, { mode: 'cors' })
-        .then(res => res.json())
-        .then(data => {
-          productList = data;
-          const nameList = document.getElementById('namelist');
-          nameList.innerHTML = '';
-          data.forEach(item => {
-            if (item.name) {
-              const opt = document.createElement('option');
-              opt.value = item.name;
-              nameList.appendChild(opt);
-            }
-          });
-          addItemRow();
-        })
-        .catch(err => console.error('Cannot load product list', err));
-    }
+   
 
     function addItemRow() {
       const container = document.getElementById('items-container');
