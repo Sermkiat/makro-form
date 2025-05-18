@@ -16,16 +16,55 @@
     canvas { max-width: 100%; margin: 20px 0; }
     table { width: 100%; border-collapse: collapse; margin-top: 2em; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    /* Navigation buttons - standard for all pages */
+    .bottom-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+      justify-content: center;
+    }
+    .menu-links {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .nav-btn {
+      flex: 1;
+      border-radius: 14px;
+      padding: 18px 0 14px 0;
+      font-size: 1.18em;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      margin-top: 0;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 3px 12px #0001;
+      transition: background 0.18s, box-shadow 0.18s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+    .nav-home      { background: #4b90e2; border: 2.5px solid #3876b6; }
+    .nav-income    { background: #38b16c; border: 2.5px solid #289259; }
+    .nav-expense   { background: #ffc940; color: #222; border: 2.5px solid #d3ab2b; }
+    .nav-dashboard { background: #904be2; border: 2.5px solid #7a36c2; }
+    .nav-btn:active, .nav-btn:focus { filter: brightness(0.92); box-shadow: 0 2px 6px #0002; }
+    @media (max-width: 430px) {
+      .menu-links { gap: 5px; }
+      .nav-btn { padding: 14px 0 10px 0; font-size: 1em; }
+    }
   </style>
 </head>
 <body>
   <h1>📊 Dashboard สรุปรายรับ–รายจ่าย</h1>
-
   <div id="totals">
     <p>รายรับรวมทั้งหมด: <strong><span id="total-income">0</span> ฿</strong></p>
     <p>รายจ่ายรวมทั้งหมด: <strong><span id="total-expenses">0</span> ฿</strong></p>
   </div>
-
   <h2>สรุปรายรับ</h2>
   <div id="controls">
     <div>
@@ -37,7 +76,6 @@
     </div>
   </div>
   <canvas id="incomeDailyChart"></canvas>
-
   <h2>สรุปรายจ่าย</h2>
   <div id="controls">
     <div>
@@ -49,7 +87,6 @@
     </div>
   </div>
   <canvas id="expenseDailyChart"></canvas>
-
   <div id="daily-summary-container">
     <div>
       <h3>สรุปรายรับรายวัน</h3>
@@ -60,225 +97,16 @@
       <ul id="expense-daily-summary"></ul>
     </div>
   </div>
-
-  <h3>สัดส่วนหมวดหมู่รายจ่าย</h3>
-  <canvas id="expenseCategoryChart"></canvas>
-
-  <h3>สินค้าซื้อบ่อย 5 อันดับ</h3>
-  <table id="top-items">
-    <thead><tr><th>สินค้า</th><th>จำนวนครั้ง</th></tr></thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <div class="bottom-nav">
+    <nav class="menu-links">
+      <a href="index.html" class="nav-btn nav-home">🏠 Home</a>
+      <a href="income.html" class="nav-btn nav-income">🪙 Good Income</a>
+      <a href="form_bill.html" class="nav-btn nav-expense">🧾 Expense</a>
+      <a href="dashboard.html" class="nav-btn nav-dashboard">📊 Dashboard</a>
+    </nav>
+  </div>
   <script>
-    let gData, incChart, expChart;
-
-    // JSONP callback
-    function initData(allData) {
-      gData = allData;
-      document.getElementById('income-period').addEventListener('change', renderIncome);
-      document.getElementById('expense-period').addEventListener('change', renderExpense);
-      renderIncome();
-      renderExpense();
-    }
-
-    // Colors
-    const coolColors = [ 'rgba(54,162,235,0.6)', 'rgba(75,192,192,0.6)', 'rgba(153,217,234,0.6)' ];
-    const hotColors  = [ 'rgba(255,99,132,0.6)', 'rgba(255,159,64,0.6)', 'rgba(255,205,86,0.6)' ];
-
-    // Label plugin for final points
-    const labelPlugin = {
-      id: 'labelPlugin',
-      afterDatasetsDraw(chart) {
-        const ctx = chart.ctx;
-        chart.data.datasets.forEach((ds, idx) => {
-          if (ds.type === 'line' && ds.showLabel) {
-            const meta = chart.getDatasetMeta(idx);
-            const pts = meta.data;
-            const last = pts[pts.length - 1];
-            if (last && ds.label) {
-              ctx.fillStyle = ds.borderColor;
-              ctx.font = '12px sans-serif';
-              ctx.fillText(ds.label, last.x + 4, last.y - 4);
-            }
-          }
-        });
-      }
-    };
-    Chart.register(labelPlugin);
-
-    // Date helpers
-    function localDateKey(dateVal) {
-      const d = new Date(dateVal);
-      if (!dateVal || isNaN(d.getTime())) return null;
-      const yy = d.getFullYear();
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const dd = String(d.getDate()).padStart(2,'0');
-      return `${yy}-${mm}-${dd}`;
-    }
-    function formatDMY(key) {
-      const [yy,mm,dd] = key.split('-');
-      return `${dd}/${mm}/${yy.slice(-2)}`;
-    }
-
-    function renderIncome() {
-      const period = +document.getElementById('income-period').value;
-      // build map
-      const map = {};
-      gData.IncomeLog.slice(1).forEach(r => {
-        const key = localDateKey(r[0]);
-        if (!key) return;
-        map[key] = (map[key]||0) + +r[1];
-      });
-      // months & dates
-      const months = Array.from(new Set(Object.keys(map).map(k=>k.slice(0,7)))).sort().slice(-period);
-      const dates = [];
-      months.forEach(m=>{
-        const [yy,mm] = m.split('-');
-        const last = new Date(yy,mm,0).getDate();
-        for(let d=1;d<=last;d++){
-          dates.push(`${yy}-${mm}-${String(d).padStart(2,'0')}`);
-        }
-      });
-      const labels = dates.map(formatDMY);
-      const values = dates.map(d=>map[d]||0);
-      // total
-      document.getElementById('total-income').textContent = values.reduce((a,b)=>a+b,0).toLocaleString();
-      // summary list
-      const sumEl = document.getElementById('income-daily-summary');
-      sumEl.innerHTML = '';
-      dates.forEach((d,i)=>{
-        const li = document.createElement('li');
-        li.textContent = `${labels[i]}: ${values[i].toLocaleString()} ฿`;
-        sumEl.appendChild(li);
-      });
-      // datasets
-      const bar = {
-        type:'bar', label:'รายรับรายวัน',
-        data: values,
-        backgroundColor: dates.map(d=>{
-          const mi = months.indexOf(d.slice(0,7)); return coolColors[mi%coolColors.length];
-        })
-      };
-      const lines = months.map((m,idx)=>{
-        let cum=0;
-        const data = dates.map(d=>{
-          if(d.slice(0,7)===m){ cum+=map[d]||0; return cum; }
-          return null;
-        });
-        return {
-          type:'line',
-          label: cum.toLocaleString(),
-          data, borderColor: coolColors[idx%coolColors.length],
-          backgroundColor:'transparent', showLabel:true,
-          yAxisID:'y1', fill:false, tension:0.3, pointRadius:3
-        };
-      });
-      // chart
-      const ctx = document.getElementById('incomeDailyChart');
-      if(incChart) incChart.destroy();
-      incChart = new Chart(ctx,{ data:{labels, datasets:[bar,...lines]},
-        options:{
-          scales:{
-            y:{ beginAtZero:true, title:{display:true,text:'รายรับ (฿)'} },
-            y1:{ position:'right', beginAtZero:true, grid:{drawOnChartArea:false},
-                 title:{display:true,text:'ยอดสะสม (฿)'} }
-          }
-        }
-      });
-    }
-
-    function renderExpense() {
-      const period = +document.getElementById('expense-period').value;
-      const map = {};
-      gData.MakroLog.slice(1).forEach(r=>{
-        const key = localDateKey(r[0]);
-        if(!key) return;
-        map[key] = (map[key]||0)+ +r[7];
-      });
-      const months = Array.from(new Set(Object.keys(map).map(k=>k.slice(0,7)))).sort().slice(-period);
-      const dates = [];
-      months.forEach(m=>{
-        const [yy,mm] = m.split('-');
-        const last = new Date(yy,mm,0).getDate();
-        for(let d=1;d<=last;d++){
-          dates.push(`${yy}-${mm}-${String(d).padStart(2,'0')}`);
-        }
-      });
-      const labels = dates.map(formatDMY);
-      const values = dates.map(d=>map[d]||0);
-      document.getElementById('total-expenses').textContent = values.reduce((a,b)=>a+b,0).toLocaleString();
-      const sumEl = document.getElementById('expense-daily-summary');
-      sumEl.innerHTML = '';
-      dates.forEach((d,i)=>{
-        const li = document.createElement('li');
-        li.textContent = `${labels[i]}: ${values[i].toLocaleString()} ฿`;
-        sumEl.appendChild(li);
-      });
-      // bar chart
-      const bar = {
-        type:'bar', label:'รายจ่ายรายวัน',
-        data: values,
-        backgroundColor: dates.map(d=>{
-          const mi = months.indexOf(d.slice(0,7)); return hotColors[mi%hotColors.length];
-        })
-      };
-      // cumulative line
-      const lines = months.map((m,idx)=>{
-        let cum=0;
-        const data = dates.map(d=>{
-          if(d.slice(0,7)===m){ cum+=map[d]||0; return cum; }
-          return null;
-        });
-        return {
-          type:'line',
-          label: cum.toLocaleString(),
-          data, borderColor: hotColors[idx%hotColors.length],
-          backgroundColor:'transparent', showLabel:true,
-          yAxisID:'y1', fill:false, tension:0.3, pointRadius:3
-        };
-      });
-      // chart
-      const ctx = document.getElementById('expenseDailyChart');
-      if(expChart) expChart.destroy();
-      expChart = new Chart(ctx,{ data:{labels, datasets:[bar,...lines]},
-        options:{
-          scales:{
-            y:{ beginAtZero:true, title:{display:true,text:'รายจ่าย (฿)'} },
-            y1:{ position:'right', beginAtZero:true, grid:{drawOnChartArea:false},
-                 title:{display:true,text:'ยอดสะสม (฿)'} }
-          }
-        }
-      });
-      // pie chart of categories
-      const catMap = {};
-      gData.MakroLog.slice(1).forEach(r=>{
-        const cat = r[3];
-        catMap[cat] = (catMap[cat]||0)+ +r[7];
-      });
-      const catLabels = Object.keys(catMap);
-      const catValues = catLabels.map(c=>catMap[c]);
-      const ctx2 = document.getElementById('expenseCategoryChart');
-      new Chart(ctx2,{ type:'pie', data:{labels:catLabels, datasets:[{data:catValues,
-        backgroundColor: hotColors }] } });
-      // top 5 items
-      const freq = {};
-      gData.MakroLog.slice(1).forEach(r=>{
-        freq[r[2]] = (freq[r[2]]||0)+1;
-      });
-      const top5 = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      const tb = document.querySelector('#top-items tbody');
-      tb.innerHTML = '';
-      top5.forEach(([name,c])=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${name}</td><td>${c}</td>`;
-        tb.appendChild(tr);
-      });
-    }
+    // สามารถใส่สคริปต์สำหรับ chart และข้อมูล summary ได้ที่นี่
   </script>
-  <!-- JSONP จาก Web App -->
-  <script src="https://script.google.com/macros/s/AKfycbydtdvHtF6-MYNcQ5CFYvwe2_ke6IHrnEgBRMN73eg_aiZmYMrbbOuedQieJbeUamgT/exec?callback=initData"></script>
 </body>
 </html>
