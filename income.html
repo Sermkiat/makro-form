@@ -37,7 +37,7 @@
       margin-bottom: 4px;
       font-weight: 500;
     }
-    .form-group input {
+    .form-group input, .form-group datalist {
       width: 100%; padding: 10px;
       font-size: 14px; height: 40px;
       border: 1px solid #ccc;
@@ -116,7 +116,12 @@
       </div>
       <div class="form-group">
         <label>แหล่งรายรับ</label>
-        <input type="text" name="soure" required placeholder="เช่น เงินเดือน, ขายของ ฯลฯ"/>
+        <input list="income-soure-list" name="soure" id="soure-input" required placeholder="เลือกหรือพิมพ์ เช่น ขายขนม"/>
+        <datalist id="income-soure-list">
+          <option value="ขายขนม">
+          <option value="เทรด">
+          <option value="อื่นๆ">
+        </datalist>
       </div>
       <button type="submit" class="btn-submit">บันทึกรายรับ</button>
     </form>
@@ -144,7 +149,7 @@
       // Popup confirmation before submit
       const confirmResult = await Swal.fire({
         title: 'ยืนยันการบันทึก?',
-        text: `วันที่: ${date}\nรายรับ: ${income}\nแหล่งรายรับ: ${soure}`,
+        html: `วันที่: <b>${date}</b><br>รายรับ: <b>${income}</b><br>แหล่งรายรับ: <b>${soure}</b>`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'ใช่, บันทึกเลย',
