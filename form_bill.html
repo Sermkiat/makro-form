@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>บันทึกบิล/รายจ่าย</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body { background: #77aaff; font-family: 'Kanit', sans-serif; margin: 0; }
@@ -187,52 +188,30 @@
     </div>
   </div>
   <script>
-    // !!! สำคัญ: ใส่ URL ของ Web App ที่ได้จากการ Deploy Google Apps Script ตรงนี้ !!!
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec'; 
-    // ตัวอย่าง: const webAppUrl = 'https://script.google.com/macros/s/ABCDEFG123456/exec';
-
     // --- Marketlist ---
     let marketlist = [];
     let marketlistNames = [];
-
     function fetchMarketlist() {
       return new Promise((resolve, reject) => {
-        const url = `${webAppUrl}?action=marketlist`; // ใช้ webAppUrl ที่กำหนด
+        const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=marketlist';
         const callbackName = 'marketlist_cb_' + Math.random().toString(36).substring(2);
         window[callbackName] = function(response) {
-          try {
-            if (response && response.result === 'success') {
-              marketlist = response.data || [];
-              marketlistNames = marketlist.map(item => item.name).filter(Boolean);
-              updateProductDatalist();
-              resolve();
-            } else {
-              console.error('Marketlist fetch error (response):', response);
-              reject(response && response.message || 'ไม่สามารถโหลด Marketlist ได้');
-            }
-          } catch (error) {
-            console.error('Marketlist callback processing error:', error);
-            reject('เกิดข้อผิดพลาดในการประมวลผลข้อมูล Marketlist');
-          } finally {
-            delete window[callbackName];
-            const scriptTag = document.getElementById(callbackName);
-            if (scriptTag) document.body.removeChild(scriptTag);
+          if (response && response.result === 'success') {
+            marketlist = response.data || [];
+            marketlistNames = marketlist.map(item => item.name).filter(Boolean);
+            updateProductDatalist();
+            resolve();
+          } else {
+            reject(response && response.message || 'ไม่สามารถโหลด Marketlist');
           }
+          delete window[callbackName];
+          document.body.removeChild(script);
         };
         const script = document.createElement('script');
-        script.id = callbackName; // เพิ่ม ID ให้ script tag เพื่อให้ลบได้ง่าย
-        script.src = `${url}&callback=${callbackName}`;
-        script.onerror = function() { // จัดการ error กรณี script โหลดไม่สำเร็จ
-            console.error('Marketlist script load error for URL:', script.src);
-            delete window[callbackName];
-            const scriptTag = document.getElementById(callbackName);
-            if (scriptTag) document.body.removeChild(scriptTag);
-            reject('ไม่สามารถโหลดสคริปต์ Marketlist (อาจเกิดจากปัญหาเครือข่ายหรือ URL ผิดพลาด)');
-        };
+        script.src = url + `&callback=${callbackName}`;
         document.body.appendChild(script);
       });
     }
-
     function updateProductDatalist() {
       let datalist = document.getElementById('product-list');
       if (!datalist) {
@@ -240,20 +219,16 @@
         datalist.id = 'product-list';
         document.body.appendChild(datalist);
       }
-      datalist.innerHTML = ''; // Clear existing options
-      const uniqueNames = [...new Set(marketlistNames)]; // Ensure unique names
-      uniqueNames.forEach(name => {
-        if (name) { // Ensure name is not empty or null
-            const opt = document.createElement('option');
-            opt.value = name;
-            datalist.appendChild(opt);
-        }
+      datalist.innerHTML = '';
+      marketlistNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        datalist.appendChild(opt);
       });
       document.querySelectorAll('input[name="name"]').forEach(input => {
         input.setAttribute('list', 'product-list');
       });
     }
-
     // --- Form ---
     let itemIndex = 0;
     function itemTemplate(idx) {
@@ -284,8 +259,8 @@
         <div class="single-row">
           <div class="col"><input type="number" min="0" name="amount" placeholder="จำนวน" required oninput="autoCalcTotal(this)"></div>
           <div class="col"><input type="text" name="unit" placeholder="หน่วย" required></div>
-          <div class="col"><input type="number" min="0" step="any" name="price_unit" placeholder="ราคาต่อหน่วย" required oninput="autoCalcTotal(this)"></div>
-          <div class="col"><input type="number" min="0" step="any" name="total" placeholder="รวม" readonly style="background:#e0e0e0;"></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="price_unit" placeholder="ราคาต่อหน่วย" required oninput="autoCalcTotal(this)"></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="total" placeholder="รวม" readonly style="background:#e0e0e0;"></div>
         </div>
         <div class="single-row">
           <div class="col"><input type="text" name="in_unit" placeholder="หน่วยย่อย"></div>
@@ -295,9 +270,8 @@
       </div>
       `;
     }
-
     function addItem(values = {}) {
-      const idx = itemIndex++; // ใช้ itemIndex ที่ update แล้ว
+      const idx = itemIndex++;
       const div = document.createElement('div');
       div.innerHTML = itemTemplate(idx);
       const el = div.firstElementChild;
@@ -310,112 +284,63 @@
         nameInput.addEventListener('change', function() {
           autofillFromMarketlist(this, el);
         });
-        nameInput.setAttribute('list', 'product-list'); // Ensure datalist is set
       }
+      nameInput.setAttribute('list', 'product-list');
       document.getElementById('items-list').appendChild(el);
-      updateItemHeaders(); // เรียกหลังจากเพิ่ม element แล้ว
+      updateItemHeaders();
     }
-
-    function autofillFromMarketlist(inputElement, sectionElement) {
-      const val = inputElement.value.trim();
-      const foundItem = marketlist.find(item => item.name === val);
-      if (foundItem) {
-        const fieldsToFill = {
-            'group': foundItem.group,
-            'unit': foundItem.unit,
-            'in_unit': foundItem.in_unit,
-            'sec_unit': foundItem.sec_unit
-            // 'price_unit': foundItem.price_unit // พิจารณาว่าจะ autofill ราคาหรือไม่
-        };
-        for (const fieldName in fieldsToFill) {
-            const fieldInput = sectionElement.querySelector(`[name=${fieldName}]`);
-            if (fieldInput && fieldsToFill[fieldName] !== undefined) {
-                fieldInput.value = fieldsToFill[fieldName];
-            }
-        }
+    function autofillFromMarketlist(input, section) {
+      const val = input.value.trim();
+      const found = marketlist.find(item => item.name === val);
+      if (found) {
+        if (section.querySelector('[name=group]')) section.querySelector('[name=group]').value = found.group || "";
+        if (section.querySelector('[name=unit]')) section.querySelector('[name=unit]').value = found.unit || "";
+        if (section.querySelector('[name=in_unit]')) section.querySelector('[name=in_unit]').value = found.in_unit || "";
+        if (section.querySelector('[name=sec_unit]')) section.querySelector('[name=sec_unit]').value = found.sec_unit || "";
       }
     }
-
-    function removeItem(idxToRemove) {
-      // แก้ไข selector ให้ถูกต้องตาม data-idx ที่ถูก re-number
-      const itemToRemove = document.querySelector(`.item-section[data-idx="${idxToRemove}"]`);
-      if (itemToRemove) {
-        itemToRemove.remove();
-        updateItemHeaders(); // อัปเดต index และ header หลังจากลบ
-      }
+    function removeItem(idx) {
+      const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
+      if (item) item.remove();
+      updateItemHeaders();
     }
-
     function updateItemHeaders() {
-      const items = document.querySelectorAll('#items-list .item-section');
+      const items = document.querySelectorAll('.item-section');
       items.forEach((el, i) => {
-        el.querySelector('.item-header').childNodes[0].textContent = `รายการที่ ${i + 1}`;
-        el.setAttribute('data-idx', i); // Re-number data-idx
-        // Update remove button onclick to use the new index 'i'
-        const removeBtn = el.querySelector('.remove-btn');
-        if (removeBtn) {
-            removeBtn.setAttribute('onclick', `removeItem(${i})`);
-        }
+        el.querySelector('.item-header').childNodes[0].textContent = `รายการที่ ${i+1}`;
+        el.setAttribute('data-idx', i);
       });
-      itemIndex = items.length; // อัปเดต itemIndex ตามจำนวน item จริง
-      updateProductDatalist(); // อาจจะไม่จำเป็นต้องเรียกทุกครั้งที่ update header
+      itemIndex = items.length;
+      updateProductDatalist();
     }
-
     document.addEventListener('DOMContentLoaded', async () => {
-      // ตั้งค่า default date เป็นวันปัจจุบัน
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('date_bill').value = today;
-
       try {
-        Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         await fetchMarketlist();
-        Swal.close();
       } catch (err) {
-        Swal.fire('เกิดข้อผิดพลาด', err.toString(), 'error');
+        Swal.fire('เกิดข้อผิดพลาด', err, 'error');
       }
-      addItem(); // เพิ่มรายการแรกเริ่มต้น
+      addItem();
       document.getElementById('billForm').addEventListener('submit', previewAndConfirmReceipt);
     });
-
     function getItems() {
-      const itemsData = [];
-      document.querySelectorAll('#items-list .item-section').forEach((section) => {
-        const itemObj = {};
-        section.querySelectorAll('input, select').forEach(inputEl => {
-          if (inputEl.name) { // ตรวจสอบว่ามี name attribute
-            itemObj[inputEl.name] = inputEl.value;
-          }
+      const items = [];
+      document.querySelectorAll('.item-section').forEach((section) => {
+        const obj = {};
+        section.querySelectorAll('input,select').forEach(inp => {
+          obj[inp.name] = inp.value;
         });
-        // ตรวจสอบว่ามีข้อมูลที่จำเป็นอย่างน้อย (เช่น ชื่อสินค้า) ก่อนเพิ่ม
-        if (itemObj.name) {
-            itemsData.push(itemObj);
-        }
+        items.push(obj);
       });
-      return itemsData;
+      return items;
     }
-    
     // ---------- Receipt Preview and Confirm ----------
     async function previewAndConfirmReceipt(e) {
       e.preventDefault();
-      if (!webAppUrl || webAppUrl === 'YOUR_WEB_APP_URL_HERE') {
-        Swal.fire('ตั้งค่าไม่สมบูรณ์', 'กรุณาใส่ URL ของ Web App ในโค้ด HTML (ตัวแปร webAppUrl)', 'error');
-        return;
-      }
-
       const date_bill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
-      
-      if (!date_bill || !supplier) {
-        Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกวันที่ซื้อและแหล่งที่ซื้อ', 'warning');
-        return;
-      }
-
       const items = getItems();
-      if (items.length === 0) {
-        Swal.fire('ไม่มีรายการ', 'กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ', 'warning');
-        return;
-      }
-
       let sum = 0;
+      // Receipt-style HTML (readable, simple, per line)
       let html = `
         <div class="receipt-confirm">
           <div class="meta"><b>วันที่:</b> ${date_bill||'-'}<br><b>ร้าน:</b> ${supplier||'-'}</div>
@@ -424,20 +349,22 @@
       items.forEach((item) => {
         const total = parseFloat(item.total) || 0;
         sum += total;
+        // รวม detail โดยไม่แสดงชื่อช่อง, ไม่ใส่ ,
         let details = [
-          (item.amount||'') && (item.amount + (item.unit ? ' ' + item.unit : '')),
-          (item.price_unit||'') && ('@ ' + parseFloat(item.price_unit || 0).toFixed(2)),
+          (item.amount||'') && (item.amount + ' x'),
+          (item.unit||'') && (item.unit),
+          (item.price_unit||'') && ('@ ' + item.price_unit),
           (item.group||''),
           (item.in_unit||''),
           (item.sec_unit||''),
           (item.remarks||'')
-        ].filter(Boolean).join(' &nbsp;&nbsp; '); // ใช้ &nbsp; เพื่อให้มี space ที่แสดงผล
+        ].filter(Boolean).join('  ');
         html += `
           <div class="item-row">
             <span class="item-name">${item.name||'-'}</span>
             <span class="item-total">${total.toFixed(2)}</span>
           </div>
-          ${details ? `<div class="item-detail">${details}</div>` : ''}
+          <div class="item-detail">${details}</div>
         `;
       });
       html += `
@@ -453,85 +380,60 @@
         html,
         showCancelButton:true,
         confirmButtonText:'บันทึก',
-        cancelButtonText:'กลับ',
-        width: 'auto' // ให้ popup ปรับขนาดตาม content
+        cancelButtonText:'กลับ'
       });
       if (!res.isConfirmed) return;
-      
-      // ส่งข้อมูลด้วย fetch POST
-      saveToSheetWithFetch(date_bill, supplier, items, new Date().toISOString());
+      saveToSheet(date_bill, supplier, items, new Date().toISOString());
     }
-
-    // ---------- Save/Submit with Fetch/POST ----------
-    async function saveToSheetWithFetch(date_bill, supplier, items, records_time) {
+    // ---------- Save/Submit ----------
+    function saveToSheet(date_bill, supplier, items, records_time) {
       document.querySelector('.btn-save').disabled = true;
-      Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-      const payload = {
-        data: items.map(item => ({
-          date_bill,
-          supplier,
-          name: item.name || "",
-          unit: item.unit || "",
-          group: item.group || "",
-          amount: item.amount || "",
-          price_unit: item.price_unit || "",
-          total: item.total || "",
-          in_unit: item.in_unit || "",
-          sec_unit: item.sec_unit || "",
-          remarks: item.remarks || "",
-          records_time: records_time,
-        }))
-      };
-
-      try {
-        const response = await fetch(webAppUrl, { // ใช้ webAppUrl ที่กำหนด
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const result = await response.json();
+      const data = items.map(item => ({
+        date_bill,
+        supplier,
+        name: item.name,
+        unit: item.unit,
+        group: item.group,
+        amount: item.amount,
+        price_unit: item.price_unit,
+        total: item.total,
+        in_unit: item.in_unit,
+        sec_unit: item.sec_unit,
+        remarks: item.remarks,
+        records_time: records_time,
+      }));
+      Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
+      const callbackName = 'callback_' + Math.random().toString(36).substring(2);
+      window[callbackName] = function(response) {
         Swal.close();
         document.querySelector('.btn-save').disabled = false;
-
-        if (result && result.result === 'success') {
-          Swal.fire('สำเร็จ!', result.message || 'บันทึกข้อมูลเรียบร้อย', 'success');
+        if (response && response.result === 'success') {
+          Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success');
           document.getElementById('billForm').reset();
-          // ตั้งค่า default date เป็นวันปัจจุบันอีกครั้งหลัง reset
-          document.getElementById('date_bill').value = new Date().toISOString().split('T')[0];
           document.getElementById('items-list').innerHTML = '';
-          addItem(); // เพิ่ม item แรกกลับมา
-          // updateProductDatalist(); // อาจจะไม่จำเป็นถ้า marketlist ไม่เปลี่ยน
+          addItem();
+          updateProductDatalist();
         } else {
-          Swal.fire('ผิดพลาด', result && result.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-          console.error('Server error details:', result);
+          Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
-      } catch (error) {
-        Swal.close();
-        document.querySelector('.btn-save').disabled = false;
-        Swal.fire('ผิดพลาดในการเชื่อมต่อ', 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: ' + error.message, 'error');
-        console.error('Fetch error:', error);
-      }
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      const script = document.createElement('script');
+      script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
+      document.body.appendChild(script);
     }
-    
     function autoCalcTotal(el) {
       const section = el.closest('.item-section');
       if (!section) return;
-      const amountInput = section.querySelector('[name=amount]');
-      const priceUnitInput = section.querySelector('[name=price_unit]');
-      const totalInput = section.querySelector('[name=total]');
-      
-      const amount = parseFloat(amountInput.value);
-      const price_unit = parseFloat(priceUnitInput.value);
-      
-      if (!isNaN(amount) && !isNaN(price_unit)) {
-        totalInput.value = (amount * price_unit).toFixed(2);
+      const amount = section.querySelector('[name=amount]').value;
+      const price_unit = section.querySelector('[name=price_unit]').value;
+      const total = section.querySelector('[name=total]');
+      if (amount !== '' && price_unit !== '') {
+        total.value = parseFloat(amount) * parseFloat(price_unit);
       } else {
-        totalInput.value = '';
+        total.value = '';
       }
     }
   </script>
