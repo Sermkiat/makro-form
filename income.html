@@ -92,7 +92,6 @@
       min-width: 0;
     }
     .nav-home      { background: #4b90e2; border: 2.5px solid #3876b6; }
-    .nav-income    { background: #38b16c; border: 2.5px solid #289259; }
     .nav-expense   { background: #ffc940; color: #222; border: 2.5px solid #d3ab2b; }
     .nav-dashboard { background: #904be2; border: 2.5px solid #7a36c2; }
     .nav-btn:active, .nav-btn:focus { filter: brightness(0.92); box-shadow: 0 2px 6px #0002; }
@@ -112,23 +111,18 @@
         <input type="date" name="date" required />
       </div>
       <div class="form-group">
-        <label>หมวดหมู่</label>
-        <input type="text" name="category" required placeholder="หมวดหมู่ เช่น เงินเดือน, ขายของ ฯลฯ"/>
+        <label>รายรับ</label>
+        <input type="number" name="income" required placeholder="0.00" min="0" step="0.01"/>
       </div>
       <div class="form-group">
-        <label>จำนวนเงิน</label>
-        <input type="number" name="amount" required placeholder="0.00" min="0" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>หมายเหตุ</label>
-        <input type="text" name="note" placeholder="รายละเอียดเพิ่มเติม"/>
+        <label>แหล่งรายรับ</label>
+        <input type="text" name="soure" required placeholder="เช่น เงินเดือน, ขายของ ฯลฯ"/>
       </div>
       <button type="submit" class="btn-submit">บันทึกรายรับ</button>
     </form>
     <div class="bottom-nav">
       <nav class="menu-links">
         <a href="index.html" class="nav-btn nav-home">🏠 Home</a>
-        <a href="income.html" class="nav-btn nav-income">🪙 Good Income</a>
         <a href="form_bill.html" class="nav-btn nav-expense">🧾 Expense</a>
         <a href="dashboard.html" class="nav-btn nav-dashboard">📊 Dashboard</a>
       </nav>
@@ -138,17 +132,31 @@
     document.getElementById('incomeForm').addEventListener('submit', async function(e){
       e.preventDefault();
       const form = e.target;
-      const date = form.date.value;
-      const category = form.category.value;
-      const amount = form.amount.value;
-      const note = form.note.value;
-      if(!date || !category || !amount) {
+      const date = form.date.value.trim();
+      const income = form.income.value.trim();
+      const soure = form.soure.value.trim();
+
+      if(!date || !income || !soure) {
         Swal.fire('กรุณากรอกข้อมูลให้ครบถ้วน','','warning');
         return;
       }
+
+      // Popup confirmation before submit
+      const confirmResult = await Swal.fire({
+        title: 'ยืนยันการบันทึก?',
+        text: `วันที่: ${date}\nรายรับ: ${income}\nแหล่งรายรับ: ${soure}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, บันทึกเลย',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!confirmResult.isConfirmed) return;
+
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-      const data = {date, category, amount, note, type: 'income'};
+      const data = { date, income, soure, sheet: 'incomelog' };
       try {
         const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)), {method:'GET'});
         const resJson = await res.json();
