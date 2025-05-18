@@ -396,7 +396,7 @@
     // ---------- Receipt Preview and Confirm ----------
     async function previewAndConfirmReceipt(e) {
       e.preventDefault();
-      if (!webAppUrl || webAppUrl === 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec') {
+      if (!webAppUrl || webAppUrl === 'YOUR_WEB_APP_URL_HERE') {
         Swal.fire('ตั้งค่าไม่สมบูรณ์', 'กรุณาใส่ URL ของ Web App ในโค้ด HTML (ตัวแปร webAppUrl)', 'error');
         return;
       }
