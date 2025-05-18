@@ -79,6 +79,77 @@
       .container { max-width: 100vw; }
       .single-row { flex-direction: column; gap: 0; }
     }
+
+    /* Receipt-style popup */
+    .swal2-title { font-weight: bold !important; }
+    .receipt-confirm {
+      font-family: 'Kanit', monospace !important;
+      font-size: 1.08em;
+      text-align: left;
+      line-height: 1.7;
+      padding: 0 2px;
+      margin-bottom: 0;
+    }
+    .receipt-confirm hr {
+      margin: 10px 0 14px 0;
+      border: none;
+      border-top: 1.5px solid #bbb;
+    }
+    .receipt-confirm .meta {
+      margin-bottom: 10px;
+    }
+    .receipt-confirm .item-row {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+    }
+    .receipt-confirm .item-name {
+      font-weight: bold;
+      flex: 1 1 auto;
+    }
+    .receipt-confirm .item-total {
+      flex: 0 0 auto;
+      text-align: right;
+      min-width: 70px;
+      font-feature-settings: "tnum";
+    }
+    .receipt-confirm .item-detail {
+      font-size: 0.97em;
+      color: #555;
+      margin-left: 1.2em;
+      margin-top: 1px;
+      white-space: pre-line;
+    }
+    .receipt-confirm .sumrow {
+      border-top: 1.5px solid #bbb;
+      margin-top: 12px;
+      padding-top: 5px;
+      font-weight: bold;
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      gap: 18px;
+    }
+    .receipt-confirm .sumrow .count {
+      font-weight: 400;
+      color: #555;
+      font-size: 0.98em;
+      margin-left: auto;
+      margin-right: 0;
+    }
+    .receipt-confirm .sumrow .sum {
+      color: #222;
+      font-size: 1.08em;
+      min-width: 90px;
+      text-align: right;
+      font-feature-settings: "tnum";
+    }
+    .receipt-confirm .footer {
+      color: #888;
+      font-size: 0.97em;
+      text-align: center;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -271,31 +342,37 @@
       let sum = 0;
       // Receipt-style HTML (readable, simple, per line)
       let html = `
-        <div style="font-family:Kanit,monospace;font-size:1.07em;text-align:left;line-height:1.6">
-          <div><b>วันที่:</b> ${date_bill||'-'}</div>
-          <div><b>ร้าน:</b> ${supplier||'-'}</div>
-          <hr style="margin:8px 0">
+        <div class="receipt-confirm">
+          <div class="meta"><b>วันที่:</b> ${date_bill||'-'}<br><b>ร้าน:</b> ${supplier||'-'}</div>
+          <hr>
       `;
       items.forEach((item) => {
         const total = parseFloat(item.total) || 0;
         sum += total;
+        // รวม detail โดยไม่แสดงชื่อช่อง, ไม่ใส่ ,
+        let details = [
+          (item.amount||'') && (item.amount + ' x'),
+          (item.unit||'') && (item.unit),
+          (item.price_unit||'') && ('@ ' + item.price_unit),
+          (item.group||''),
+          (item.in_unit||''),
+          (item.sec_unit||''),
+          (item.remarks||'')
+        ].filter(Boolean).join('  ');
         html += `
-          <div style="margin-bottom:8px;">
-            <b>${item.name||'-'}</b>
-            <span style="float:right;">${total.toFixed(2)}</span><br>
-            <span style="font-size:0.97em;color:#555;margin-left:1em;">
-              ${item.amount||'-'} x ${item.unit||'-'} @ ${item.price_unit||'-'}
-              ${item.group ? `, หมวด: ${item.group}` : ''}
-              ${item.in_unit ? `, ย่อย: ${item.in_unit}` : ''}
-              ${item.sec_unit ? `, ในหน่วย: ${item.sec_unit}` : ''}
-              ${item.remarks ? `, หมายเหตุ: ${item.remarks}` : ''}
-            </span>
+          <div class="item-row">
+            <span class="item-name">${item.name||'-'}</span>
+            <span class="item-total">${total.toFixed(2)}</span>
           </div>
+          <div class="item-detail">${details}</div>
         `;
       });
-      html += `<hr style="margin:8px 0">
-        <div style="font-weight:bold;text-align:right;">รวมทั้งสิ้น ${sum.toFixed(2)} บาท</div>
-        <div style="color:#888;font-size:0.97em;text-align:center;margin-top:8px;">* กรุณาตรวจสอบรายการก่อนบันทึก</div>
+      html += `
+          <div class="sumrow">
+            <span class="count">(${items.length} รายการ)</span>
+            <span class="sum">รวมทั้งสิ้น ${sum.toFixed(2)} บาท</span>
+          </div>
+          <div class="footer">* กรุณาตรวจสอบรายการก่อนบันทึก</div>
         </div>
       `;
       const res = await Swal.fire({
