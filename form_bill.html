@@ -21,7 +21,7 @@
     .row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
     .col { flex: 1; }
     label { font-weight: bold; display: block; margin-bottom: 3px; }
-    input, select {
+    input, select, datalist {
       width: 100%; padding: 7px 10px; font-size: 1em;
       border-radius: 8px; border: 1px solid #d5d5d5; background: #f4f8fb;
       box-sizing: border-box; margin-bottom: 3px;
@@ -72,7 +72,6 @@
     .home { background: #5a95f5; }
     .income { background: #29b57a; }
     .dashboard { background: #8e3eea; }
-    /* --- Customizations for single row --- */
     .single-row { display: flex; gap: 7px; margin-bottom: 7px;}
     .single-row .col { margin-bottom: 0; }
     .single-row input, .single-row select { margin-bottom: 0; }
@@ -94,14 +93,15 @@
         </div>
         <div class="col">
           <label>แหล่งที่ซื้อ</label>
-          <select id="supplier" name="supplier" required>
-            <option value="">เลือกแหล่งที่ซื้อ</option>
-            <option>7-Eleven</option>
-            <option>Lotus</option>
-            <option>Makro</option>
-            <option>BigC</option>
-            <option>อื่น ๆ</option>
-          </select>
+          <input list="supplier-list" id="supplier" name="supplier" required placeholder="เลือกแหล่งที่ซื้อ">
+          <datalist id="supplier-list">
+            <option value="Makro">
+            <option value="7-eleven">
+            <option value="Tops">
+            <option value="Lotus">
+            <option value="Lazada">
+            <option value="Shopee">
+          </datalist>
         </div>
       </div>
       <div id="items-list"></div>
@@ -126,28 +126,28 @@
         </div>
         <div class="single-row">
           <div class="col">
-            <select name="name" required>
-              <option value="">ชื่อสินค้า</option>
-              <option>นมกล่อง</option>
-              <option>ข้าวสาร</option>
-              <option>น้ำดื่ม</option>
-              <option>ไข่ไก่</option>
-              <option>อื่น ๆ</option>
-            </select>
+            <input list="product-list" name="name" required placeholder="ชื่อสินค้า">
+            <datalist id="product-list">
+              <option value="นมกล่อง">
+              <option value="ข้าวสาร">
+              <option value="น้ำดื่ม">
+              <option value="ไข่ไก่">
+              <option value="อื่น ๆ">
+            </datalist>
           </div>
           <div class="col">
-            <select name="group" required>
-              <option value="">หมวดหมู่สินค้า</option>
-              <option>กับข้าว</option>
-              <option>กินข้าว กินขนม</option>
-              <option>ของใช้ในบ้าน</option>
-              <option>ของเล่นพราว</option>
-              <option>ของใช้ส่วนตัว</option>
-              <option>ยา</option>
-              <option>เที่ยว/พักผ่อน</option>
-              <option>งานซ่อม</option>
-              <option>งานสร้าง</option>
-            </select>
+            <input list="group-list" name="group" required placeholder="หมวดหมู่สินค้า">
+            <datalist id="group-list">
+              <option value="กับข้าว">
+              <option value="กินข้าว กินขนม">
+              <option value="ของใช้ในบ้าน">
+              <option value="ของเล่นพราว">
+              <option value="ของใช้ส่วนตัว">
+              <option value="ยา">
+              <option value="เที่ยว/พักผ่อน">
+              <option value="งานซ่อม">
+              <option value="งานสร้าง">
+            </datalist>
           </div>
         </div>
         <div class="single-row">
@@ -159,8 +159,6 @@
         <div class="single-row">
           <div class="col"><input type="text" name="in_unit" placeholder="หน่วยย่อย"></div>
           <div class="col"><input type="text" name="sec_unit" placeholder="หน่วยในหน่วย"></div>
-        </div>
-        <div class="row">
           <div class="col"><input type="text" name="remarks" placeholder="หมายเหตุ"></div>
         </div>
       </div>
@@ -223,7 +221,8 @@
         unit: item.unit,
         group: item.group,
         amount: item.amount,
-        price_unit: item.price_unit, // ตามโจทย์
+        price: item.price,
+        price_unit: item.price, // ตามโจทย์
         total: item.total,
         in_unit: item.in_unit,
         sec_unit: item.sec_unit,
@@ -256,9 +255,8 @@
 
     // --- Auto calc total ---
     function autoCalcTotal(el) {
-      const parent = el.closest('.single-row');
       const section = el.closest('.item-section');
-      if (!parent || !section) return;
+      if (!section) return;
       const amount = section.querySelector('[name=amount]').value;
       const price = section.querySelector('[name=price]').value;
       const total = section.querySelector('[name=total]');
