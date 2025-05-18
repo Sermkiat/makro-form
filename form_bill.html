@@ -2,247 +2,242 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>บันทึกบิล / รายจ่าย</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- SweetAlert2 CDN -->
+  <title>บันทึกบิล/รายจ่าย</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    body { background: #a2c5ff; margin: 0; font-family: sans-serif; }
+    body { background: #77aaff; font-family: 'Kanit', sans-serif; margin: 0; }
     .container {
-      max-width: 430px;
-      margin: 30px auto;
       background: #fff;
-      border-radius: 25px;
-      box-shadow: 0 3px 24px #0001;
-      padding: 20px;
+      max-width: 420px;
+      margin: 24px auto;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px #0002;
+      padding: 22px 12px 16px 12px;
     }
-    h2 { text-align: center; }
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 6px;
+    h2 { text-align: center; margin: 0; }
+    .divider { border-top: 3px solid #b3e0ff; margin: 12px 0; }
+    .row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .col { flex: 1; }
+    label { font-weight: bold; display: block; margin-bottom: 3px; }
+    input, select {
+      width: 100%; padding: 7px 10px; font-size: 1em;
+      border-radius: 8px; border: 1px solid #d5d5d5; background: #f4f8fb;
+      box-sizing: border-box; margin-bottom: 3px;
     }
-    .row > input, .row > select {
-      flex: 1;
-      padding: 5px;
-      border: 1px solid #d0d0d0;
-      border-radius: 7px;
-    }
-    .bill-item {
-      background: #e3f3ff;
-      border-radius: 12px;
-      padding: 10px 10px 12px 10px;
+    .item-section {
+      background: #eaf6ff;
+      border-radius: 14px;
+      padding: 12px;
       margin-bottom: 14px;
       position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
     }
-    .bill-item-header {
-      display: grid;
-      grid-template-columns: 1fr 1fr 60px;
-      gap: 7px;
-      align-items: center;
-      margin-bottom: 4px;
+    .item-header {
+      font-weight: bold; font-size: 1.05em; margin-bottom: 6px;
     }
-    .bill-num {
-      font-size: 1.2em;
-      font-weight: bold;
-      grid-column: 1 / 2;
-      align-self: center;
+    .remove-btn {
+      position: absolute; top: 11px; right: 11px;
+      background: #e74c3c; color: #fff; border: none;
+      border-radius: 7px; padding: 3px 12px; font-size: 0.98em; cursor: pointer;
     }
-    .del-btn {
-      background: #ff3c3c;
-      color: #fff;
+    .actions {
+      display: flex; gap: 10px; margin-top: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 1.06em;
+      border-radius: 9px;
       border: none;
-      border-radius: 20px;
-      padding: 3px 13px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .btn-add { background: #ffe066; color: #444; }
+    .btn-save { background: #328ef5; color: #fff; }
+    .bottom-nav {
+      display: flex; gap: 10px; margin-top: 20px;
+    }
+    .nav-btn {
+      flex: 1;
+      border-radius: 10px;
+      padding: 15px 0;
       font-size: 1.1em;
-      cursor: pointer;
-      grid-column: 3 / 4;
-      justify-self: end;
-    }
-    .header-inputs {
-      display: flex;
-      flex-direction: row;
-      gap: 7px;
-      grid-column: 1 / 3;
-    }
-    .header-inputs input {
-      flex: 1;
-    }
-    .input-row-4 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 7px;
-      margin-bottom: 2px;
-      width: 100%;
-    }
-    .input-row-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 7px;
-      margin-bottom: 2px;
-      width: 100%;
-    }
-    .btns {
-      display: flex;
-      gap: 12px;
-      margin: 16px 0;
-    }
-    .btn-add {
-      flex: 1;
-      background: #ffe082;
-      color: #333;
-      font-weight: bold;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 0;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .btn-save {
-      flex: 2;
-      background: #2196f3;
       color: #fff;
-      font-weight: bold;
       border: none;
-      border-radius: 10px;
-      padding: 10px 0;
-      font-size: 1em;
-      cursor: pointer;
+      font-weight: bold;
+      margin-top: 0;
     }
-    .nav {
-      display: flex;
-      justify-content: space-around;
-      border-top: 1px solid #eee;
-      margin-top: 20px;
-      padding-top: 10px;
-      color: #888;
-    }
-    .nav a { color: #888; text-decoration: none; }
-    .row input[type="date"] { min-width: 0; }
-    @media (max-width: 500px) {
-      .container { max-width:98vw; }
-      .input-row-4, .input-row-3 { grid-template-columns: 1fr; }
-      .bill-item-header { grid-template-columns: 1fr 1fr 50px; }
-    }
+    .home { background: #5a95f5; }
+    .income { background: #29b57a; }
+    .dashboard { background: #8e3eea; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>บันทึกบิล / รายจ่าย</h2>
-    <form id="billForm" autocomplete="off">
+    <h2>บันทึกบิล/รายจ่าย</h2>
+    <div class="divider"></div>
+    <form id="billForm">
       <div class="row">
-        <input type="date" id="date_bill" required placeholder="วันที่ซื้อ">
-        <input type="text" id="supplier" required placeholder="แหล่งที่ซื้อ">
+        <div class="col">
+          <label>วันที่ซื้อ</label>
+          <input type="date" id="date_bill" name="date_bill" required>
+        </div>
+        <div class="col">
+          <label>แหล่งที่ซื้อ</label>
+          <select id="supplier" name="supplier" required>
+            <option value="">เลือกแหล่งที่ซื้อ</option>
+            <option>7-Eleven</option>
+            <option>Lotus</option>
+            <option>Makro</option>
+            <option>BigC</option>
+            <option>อื่น ๆ</option>
+          </select>
+        </div>
       </div>
-      <div id="items"></div>
-      <div class="btns">
-        <button type="button" class="btn-add" onclick="addItem()">+ เพิ่มรายการใหม่</button>
-        <button type="submit" class="btn-save">บันทึกข้อมูลทั้งหมด</button>
+      <div id="items-list"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-add" onclick="addItem()">+ เพิ่มรายการใหม่</button>
+        <button type="submit" class="btn btn-save">บันทึกข้อมูลทั้งหมด</button>
       </div>
     </form>
-    <div class="nav">
-      <a href="#">หน้าหลัก</a>
-      <a href="#">Dashboard</a>
-      <a href="#">Google Sheet</a>
+    <div class="bottom-nav">
+      <button class="nav-btn home">🏠 Home</button>
+      <button class="nav-btn income">💵 Good Income</button>
+      <button class="nav-btn dashboard">📊 Dashboard</button>
     </div>
   </div>
-<script>
-let itemCount = 0;
-function itemTemplate(idx) {
-  return `
-  <div class="bill-item" data-idx="${idx}">
-    <div class="bill-item-header">
-      <span class="bill-num">#${idx+1}</span>
-      <div class="header-inputs">
-        <input type="text" name="name" placeholder="ชื่อสินค้า" required>
-        <input type="text" name="group" placeholder="หมวดหมู่">
+  <script>
+    let itemIndex = 0;
+    function itemTemplate(idx) {
+      return `
+      <div class="item-section" data-idx="${idx}">
+        <div class="item-header">รายการที่ ${idx + 1}
+          <button type="button" class="remove-btn" onclick="removeItem(${idx})">ลบ</button>
+        </div>
+        <div class="row">
+          <div class="col">
+            <select name="name" required>
+              <option value="">ชื่อสินค้า</option>
+              <option>นมกล่อง</option>
+              <option>ข้าวสาร</option>
+              <option>น้ำดื่ม</option>
+              <option>ไข่ไก่</option>
+              <option>อื่น ๆ</option>
+            </select>
+          </div>
+          <div class="col">
+            <select name="group" required>
+              <option value="">หมวดหมู่สินค้า</option>
+              <option>อาหาร</option>
+              <option>เครื่องดื่ม</option>
+              <option>ของใช้</option>
+              <option>อื่น ๆ</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col"><input type="number" min="0" name="amount" placeholder="จำนวน" required></div>
+          <div class="col"><input type="text" name="unit" placeholder="หน่วย" required></div>
+        </div>
+        <div class="row">
+          <div class="col"><input type="number" min="0" step="0.01" name="price" placeholder="ราคาต่อ" required></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="total" placeholder="รวม" required></div>
+        </div>
+        <div class="row">
+          <div class="col"><input type="text" name="in_unit" placeholder="หน่วยย่อย"></div>
+          <div class="col"><input type="text" name="sec_unit" placeholder="หน่วยในหน่วย"></div>
+        </div>
+        <div class="row">
+          <div class="col"><input type="text" name="remarks" placeholder="หมายเหตุ"></div>
+        </div>
       </div>
-      <button type="button" class="del-btn" onclick="delItem(${idx})">ลบ</button>
-    </div>
-    <div class="input-row-4">
-      <input type="number" name="amount" placeholder="Amount" min="0" required>
-      <input type="text" name="unit" placeholder="Unit" required>
-      <input type="number" step="0.01" name="price" placeholder="Price Unit" min="0" required>
-      <input type="number" step="0.01" name="total" placeholder="Total" min="0" required>
-    </div>
-    <div class="input-row-3">
-      <input type="text" name="in_unit" placeholder="In unit">
-      <input type="text" name="sec_unit" placeholder="Sec Unit">
-      <input type="text" name="remarks" placeholder="Remarks">
-    </div>
-  </div>
-  `;
-}
-function addItem() {
-  const items = document.getElementById('items');
-  items.insertAdjacentHTML('beforeend', itemTemplate(itemCount));
-  itemCount++;
-}
-function delItem(idx) {
-  const el = document.querySelector(`.bill-item[data-idx="${idx}"]`);
-  if (el) el.remove();
-}
-addItem(); // initial 1 item
-
-document.getElementById('billForm').addEventListener('submit', async function(e){
-  e.preventDefault();
-
-  // Collect bill data
-  const date_bill = document.getElementById('date_bill').value;
-  const supplier = document.getElementById('supplier').value;
-  const recoards_time = new Date().toISOString();
-
-  let items = [];
-  document.querySelectorAll('.bill-item').forEach(item => {
-    let obj = {
-      date_bill,
-      supplier,
-      name: item.querySelector('[name="name"]').value,
-      unit: item.querySelector('[name="unit"]').value,
-      group: item.querySelector('[name="group"]').value,
-      amount: item.querySelector('[name="amount"]').value,
-      price: item.querySelector('[name="price"]').value,
-      total: item.querySelector('[name="total"]').value,
-      in_unit: item.querySelector('[name="in_unit"]').value,
-      sec_unit: item.querySelector('[name="sec_unit"]').value,
-      remarks: item.querySelector('[name="remarks"]').value,
-      recoards_time
-    };
-    items.push(obj);
-  });
-
-  // SweetAlert loading
-  Swal.fire({
-    title: 'กำลังบันทึกข้อมูล...',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  // JSONP request
-  const url = 'https://script.google.com/macros/s/AKfycbxFiCRwWkhJvQgjHapA6lZPmYh6Us8hdCdyj5iQ-VFvSePm4bYTckbn8FHwgZl_froi/exec';
-  const cbname = 'jsonp_callback_' + Math.random().toString(36).substr(2,9);
-
-  window[cbname] = function(result){
-    Swal.close();
-    if(result && result.status === 'success'){
-      Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย!', 'success');
-      document.getElementById('billForm').reset();
-      document.getElementById('items').innerHTML = '';
-      itemCount = 0; addItem();
-    }else{
-      Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการบันทึก', 'error');
+      `;
     }
-    delete window[cbname];
-    document.body.removeChild(script);
-  };
+    function addItem(values = {}) {
+      const idx = itemIndex++;
+      const div = document.createElement('div');
+      div.innerHTML = itemTemplate(idx);
+      // Pre-fill
+      Object.entries(values).forEach(([k, v]) => {
+        const input = div.querySelector(`[name=${k}]`);
+        if (input) input.value = v;
+      });
+      document.getElementById('items-list').appendChild(div.firstElementChild);
+    }
+    function removeItem(idx) {
+      const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
+      if (item) item.remove();
+      updateItemHeaders();
+    }
+    function updateItemHeaders() {
+      document.querySelectorAll('.item-section').forEach((el, i) => {
+        el.querySelector('.item-header').childNodes[0].textContent = `รายการที่ ${i+1}`;
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      addItem();
+      document.getElementById('billForm').addEventListener('submit', submitForm);
+    });
 
-  const script = document.createElement('script');
-  script.src = url + '?callback=' + cbname + '&data=' + encodeURIComponent(JSON.stringify(items));
-  document.body.appendChild(script);
-});
-</script>
+    function getItems() {
+      const items = [];
+      document.querySelectorAll('.item-section').forEach((section) => {
+        const obj = {};
+        section.querySelectorAll('input,select').forEach(inp => {
+          obj[inp.name] = inp.value;
+        });
+        items.push(obj);
+      });
+      return items;
+    }
+
+    function submitForm(e) {
+      e.preventDefault();
+      const date_bill = document.getElementById('date_bill').value;
+      const supplier = document.getElementById('supplier').value;
+      const records_time = new Date().toISOString();
+      const items = getItems();
+      // Build JSON object per item
+      const data = items.map(item => ({
+        date_bill,
+        supplier,
+        name: item.name,
+        unit: item.unit,
+        group: item.group,
+        amount: item.amount,
+        price: item.price,
+        price_unit: item.price, // ตามโจทย์
+        total: item.total,
+        in_unit: item.in_unit,
+        sec_unit: item.sec_unit,
+        remarks: item.remarks,
+        recoards_time: records_time,
+      }));
+
+      Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
+      // JSONP
+      const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
+      const callbackName = 'callback_' + Math.random().toString(36).substring(2);
+      window[callbackName] = function(response) {
+        Swal.close();
+        if (response && response.result === 'success') {
+          Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success');
+          document.getElementById('billForm').reset();
+          document.getElementById('items-list').innerHTML = '';
+          addItem();
+        } else {
+          Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+        }
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      const script = document.createElement('script');
+      script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
+      document.body.appendChild(script);
+    }
+  </script>
 </body>
 </html>
