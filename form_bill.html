@@ -111,9 +111,9 @@
       </div>
     </form>
     <div class="bottom-nav">
-      <button class="nav-btn home">🏠 Home</button>
-      <button class="nav-btn income">💵 Good Income</button>
-      <button class="nav-btn dashboard">📊 Dashboard</button>
+      <button class="nav-btn home" type="button">🏠 Home</button>
+      <button class="nav-btn income" type="button">💵 Good Income</button>
+      <button class="nav-btn dashboard" type="button">📊 Dashboard</button>
     </div>
   </div>
   <script>
@@ -153,7 +153,7 @@
         <div class="single-row">
           <div class="col"><input type="number" min="0" name="amount" placeholder="จำนวน" required oninput="autoCalcTotal(this)"></div>
           <div class="col"><input type="text" name="unit" placeholder="หน่วย" required></div>
-          <div class="col"><input type="number" min="0" step="0.01" name="price" placeholder="ราคาต่อหน่วย" required oninput="autoCalcTotal(this)"></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="price_unit" placeholder="ราคาต่อหน่วย" required oninput="autoCalcTotal(this)"></div>
           <div class="col"><input type="number" min="0" step="0.01" name="total" placeholder="รวม" readonly style="background:#e0e0e0;"></div>
         </div>
         <div class="single-row">
@@ -187,7 +187,6 @@
         el.querySelector('.item-header').childNodes[0].textContent = `รายการที่ ${i+1}`;
         el.setAttribute('data-idx', i);
       });
-      // รีเซต itemIndex ให้ run ต่อเนื่อง (ไม่ย้อนกลับ)
       itemIndex = items.length;
     }
     document.addEventListener('DOMContentLoaded', () => {
@@ -209,11 +208,11 @@
 
     function submitForm(e) {
       e.preventDefault();
+      document.querySelector('.btn-save').disabled = true;
       const date_bill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
       const records_time = new Date().toISOString();
       const items = getItems();
-      // Build JSON object per item
       const data = items.map(item => ({
         date_bill,
         supplier,
@@ -221,21 +220,21 @@
         unit: item.unit,
         group: item.group,
         amount: item.amount,
-        price_unit: item.price_unit, // ตามโจทย์
+        price_unit: item.price_unit,
         total: item.total,
         in_unit: item.in_unit,
         sec_unit: item.sec_unit,
         remarks: item.remarks,
-        recoards_time: records_time,
+        records_time: records_time,
       }));
 
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
-      // JSONP
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
       const callbackName = 'callback_' + Math.random().toString(36).substring(2);
       window[callbackName] = function(response) {
         Swal.close();
+        document.querySelector('.btn-save').disabled = false;
         if (response && response.result === 'success') {
           Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success');
           document.getElementById('billForm').reset();
@@ -252,15 +251,14 @@
       document.body.appendChild(script);
     }
 
-    // --- Auto calc total ---
     function autoCalcTotal(el) {
       const section = el.closest('.item-section');
       if (!section) return;
       const amount = section.querySelector('[name=amount]').value;
-      const price = section.querySelector('[name=price]').value;
+      const price_unit = section.querySelector('[name=price_unit]').value;
       const total = section.querySelector('[name=total]');
-      if (amount !== '' && price !== '') {
-        total.value = parseFloat(amount) * parseFloat(price);
+      if (amount !== '' && price_unit !== '') {
+        total.value = parseFloat(amount) * parseFloat(price_unit);
       } else {
         total.value = '';
       }
