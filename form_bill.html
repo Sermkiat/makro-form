@@ -72,6 +72,14 @@
     .home { background: #5a95f5; }
     .income { background: #29b57a; }
     .dashboard { background: #8e3eea; }
+    /* --- Customizations for single row --- */
+    .single-row { display: flex; gap: 7px; margin-bottom: 7px;}
+    .single-row .col { margin-bottom: 0; }
+    .single-row input, .single-row select { margin-bottom: 0; }
+    @media (max-width: 430px) {
+      .container { max-width: 100vw; }
+      .single-row { flex-direction: column; gap: 0; }
+    }
   </style>
 </head>
 <body>
@@ -116,7 +124,7 @@
         <div class="item-header">รายการที่ ${idx + 1}
           <button type="button" class="remove-btn" onclick="removeItem(${idx})">ลบ</button>
         </div>
-        <div class="row">
+        <div class="single-row">
           <div class="col">
             <select name="name" required>
               <option value="">ชื่อสินค้า</option>
@@ -130,22 +138,25 @@
           <div class="col">
             <select name="group" required>
               <option value="">หมวดหมู่สินค้า</option>
-              <option>อาหาร</option>
-              <option>เครื่องดื่ม</option>
-              <option>ของใช้</option>
-              <option>อื่น ๆ</option>
+              <option>กับข้าว</option>
+              <option>กินข้าว กินขนม</option>
+              <option>ของใช้ในบ้าน</option>
+              <option>ของเล่นพราว</option>
+              <option>ของใช้ส่วนตัว</option>
+              <option>ยา</option>
+              <option>เที่ยว/พักผ่อน</option>
+              <option>งานซ่อม</option>
+              <option>งานสร้าง</option>
             </select>
           </div>
         </div>
-        <div class="row">
-          <div class="col"><input type="number" min="0" name="amount" placeholder="จำนวน" required></div>
+        <div class="single-row">
+          <div class="col"><input type="number" min="0" name="amount" placeholder="จำนวน" required oninput="autoCalcTotal(this)"></div>
           <div class="col"><input type="text" name="unit" placeholder="หน่วย" required></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="price" placeholder="ราคาต่อหน่วย" required oninput="autoCalcTotal(this)"></div>
+          <div class="col"><input type="number" min="0" step="0.01" name="total" placeholder="รวม" readonly style="background:#e0e0e0;"></div>
         </div>
-        <div class="row">
-          <div class="col"><input type="number" min="0" step="0.01" name="price" placeholder="ราคาต่อ" required></div>
-          <div class="col"><input type="number" min="0" step="0.01" name="total" placeholder="รวม" required></div>
-        </div>
-        <div class="row">
+        <div class="single-row">
           <div class="col"><input type="text" name="in_unit" placeholder="หน่วยย่อย"></div>
           <div class="col"><input type="text" name="sec_unit" placeholder="หน่วยในหน่วย"></div>
         </div>
@@ -165,6 +176,7 @@
         if (input) input.value = v;
       });
       document.getElementById('items-list').appendChild(div.firstElementChild);
+      updateItemHeaders();
     }
     function removeItem(idx) {
       const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
@@ -172,9 +184,13 @@
       updateItemHeaders();
     }
     function updateItemHeaders() {
-      document.querySelectorAll('.item-section').forEach((el, i) => {
+      const items = document.querySelectorAll('.item-section');
+      items.forEach((el, i) => {
         el.querySelector('.item-header').childNodes[0].textContent = `รายการที่ ${i+1}`;
+        el.setAttribute('data-idx', i);
       });
+      // รีเซต itemIndex ให้ run ต่อเนื่อง (ไม่ย้อนกลับ)
+      itemIndex = items.length;
     }
     document.addEventListener('DOMContentLoaded', () => {
       addItem();
@@ -237,6 +253,21 @@
       const script = document.createElement('script');
       script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
       document.body.appendChild(script);
+    }
+
+    // --- Auto calc total ---
+    function autoCalcTotal(el) {
+      const parent = el.closest('.single-row');
+      const section = el.closest('.item-section');
+      if (!parent || !section) return;
+      const amount = section.querySelector('[name=amount]').value;
+      const price = section.querySelector('[name=price]').value;
+      const total = section.querySelector('[name=total]');
+      if (amount !== '' && price !== '') {
+        total.value = parseFloat(amount) * parseFloat(price);
+      } else {
+        total.value = '';
+      }
     }
   </script>
 </body>
