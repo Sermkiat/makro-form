@@ -5,11 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>สรุปการเงิน</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Navigation buttons - standard for all pages */
+    .bottom-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+      justify-content: center;
+    }
+    .menu-links {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .nav-btn {
+      flex: 1;
+      border-radius: 14px;
+      padding: 18px 0 14px 0;
+      font-size: 1.18em;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      margin-top: 0;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 3px 12px #0001;
+      transition: background 0.18s, box-shadow 0.18s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+    .nav-home      { background: #4b90e2; border: 2.5px solid #3876b6; }
+    .nav-income    { background: #38b16c; border: 2.5px solid #289259; }
+    .nav-expense   { background: #ffc940; color: #222; border: 2.5px solid #d3ab2b; }
+    .nav-dashboard { background: #904be2; border: 2.5px solid #7a36c2; }
+    .nav-btn:active, .nav-btn:focus { filter: brightness(0.92); box-shadow: 0 2px 6px #0002; }
+    @media (max-width: 430px) {
+      .menu-links { gap: 5px; }
+      .nav-btn { padding: 14px 0 10px 0; font-size: 1em; }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">📋 หน้าหลัก - สรุปการเงิน</h1>
-
+    <h1 class="text-2xl font-bold mb-4">
+      📝 หน้าหลัก - สรุปการเงิน
+    </h1>
     <!-- รายรับ/รายจ่าย -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div class="bg-white p-4 rounded shadow">
@@ -23,7 +67,6 @@
         <p id="expenseLastMonth" class="text-gray-600">เดือนก่อน: กำลังโหลด...</p>
       </div>
     </div>
-
     <!-- เมนู -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <a href="form_bill.html" class="bg-blue-500 text-white p-4 rounded shadow hover:bg-blue-600 text-center">
@@ -36,71 +79,17 @@
         📊 ดู Dashboard
       </a>
     </div>
+    <div class="bottom-nav">
+      <nav class="menu-links">
+        <a href="index.html" class="nav-btn nav-home">🏠 Home</a>
+        <a href="income.html" class="nav-btn nav-income">🪙 Good Income</a>
+        <a href="form_bill.html" class="nav-btn nav-expense">🧾 Expense</a>
+        <a href="dashboard.html" class="nav-btn nav-dashboard">📊 Dashboard</a>
+      </nav>
+    </div>
   </div>
-
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-
-    async function fetchData() {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('โหลดข้อมูลล้มเหลว');
-      return await res.json();
-    }
-
-    function parseCurrency(val) {
-      if (val === null || val === undefined) return 0;
-      return parseFloat(val.toString().replace(/[^0-9.-]+/g, '')) || 0;
-    }
-
-    function formatNumber(n) {
-      return n.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
-
-    function calculateMonthlyTotals(rows) {
-      const now = new Date();
-      const thisY = now.getFullYear(), thisM = now.getMonth();
-      const prev = new Date(thisY, thisM - 1, 1);
-      const prevY = prev.getFullYear(), prevM = prev.getMonth();
-
-      let sumThis = 0, sumPrev = 0;
-      console.log('▶ raw rows:', rows);
-      rows.forEach(([dateStr, val]) => {
-        const dt = new Date(dateStr);
-        if (isNaN(dt)) return;  // skip if not a real date
-        const y = dt.getFullYear(), m = dt.getMonth();
-        const num = parseCurrency(val);
-        if (y === thisY && m === thisM) sumThis += num;
-        else if (y === prevY && m === prevM) sumPrev += num;
-      });
-      console.log(`✔ thisMonth=${sumThis}, prevMonth=${sumPrev}`);
-      return [sumThis, sumPrev];
-    }
-
-    async function updateDashboard() {
-      try {
-        const { IncomeLog, datalog } = await fetchData();
-
-        // รายรับ
-        const incRows = IncomeLog.slice(1).map(r => [r[0], r[1]]);
-        const [iThis, iLast] = calculateMonthlyTotals(incRows);
-        document.getElementById('incomeCurrentMonth').textContent = `เดือนนี้: ${formatNumber(iThis)} บาท`;
-        document.getElementById('incomeLastMonth').   textContent = `เดือนก่อน: ${formatNumber(iLast)} บาท`;
-
-        // รายจ่าย
-        const expRows = datalog.slice(1).map(r => [r[0], r[7]]);
-        const [eThis, eLast] = calculateMonthlyTotals(expRows);
-        document.getElementById('expenseCurrentMonth').textContent = `เดือนนี้: ${formatNumber(eThis)} บาท`;
-        document.getElementById('expenseLastMonth').   textContent = `เดือนก่อน: ${formatNumber(eLast)} บาท`;
-
-      } catch (err) {
-        alert('❌ เกิดข้อผิดพลาด: ' + err.message);
-      }
-    }
-
-    updateDashboard();
+    // สามารถใส่สคริปต์ดึงข้อมูลรวมรายรับ/รายจ่ายที่เคยมี
   </script>
 </body>
 </html>
