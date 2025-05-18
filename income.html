@@ -59,24 +59,47 @@
     .btn-submit:hover {
       background: #0f9b75;
     }
+    /* Navigation buttons - standard for all pages */
+    .bottom-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+      justify-content: center;
+    }
     .menu-links {
+      width: 100%;
       display: flex;
       gap: 12px;
-      margin-top: 24px;
+      justify-content: center;
     }
-    .btn-nav {
+    .nav-btn {
       flex: 1;
-      padding: 12px;
-      font-size: 15px;
-      font-weight: bold;
-      text-align: center;
+      border-radius: 14px;
+      padding: 18px 0 14px 0;
+      font-size: 1.18em;
       color: #fff;
-      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      margin-top: 0;
+      text-align: center;
       text-decoration: none;
+      box-shadow: 0 3px 12px #0001;
+      transition: background 0.18s, box-shadow 0.18s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
     }
-    .btn-blue { background: #3b82f6; }
-    .btn-yellow { background: #ffdb4d; color: #111827; }
-    .btn-purple { background: #8b3ced; }
+    .nav-home      { background: #4b90e2; border: 2.5px solid #3876b6; }
+    .nav-income    { background: #38b16c; border: 2.5px solid #289259; }
+    .nav-expense   { background: #ffc940; color: #222; border: 2.5px solid #d3ab2b; }
+    .nav-dashboard { background: #904be2; border: 2.5px solid #7a36c2; }
+    .nav-btn:active, .nav-btn:focus { filter: brightness(0.92); box-shadow: 0 2px 6px #0002; }
+    @media (max-width: 430px) {
+      .menu-links { gap: 5px; }
+      .nav-btn { padding: 14px 0 10px 0; font-size: 1em; }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -89,78 +112,56 @@
         <input type="date" name="date" required />
       </div>
       <div class="form-group">
-        <label>💰 ยอดขาย</label>
-        <input type="number" name="income" step="0.01" min="0" required inputmode="decimal" />
+        <label>หมวดหมู่</label>
+        <input type="text" name="category" required placeholder="หมวดหมู่ เช่น เงินเดือน, ขายของ ฯลฯ"/>
       </div>
       <div class="form-group">
-        <label>📝 แหล่งรายได้</label>
-        <input type="text" name="source" required placeholder="ระบุแหล่งรายได้" />
+        <label>จำนวนเงิน</label>
+        <input type="number" name="amount" required placeholder="0.00" min="0" step="0.01"/>
       </div>
-      <button type="submit" class="btn-submit">✅ บันทึกรายรับ</button>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" name="note" placeholder="รายละเอียดเพิ่มเติม"/>
+      </div>
+      <button type="submit" class="btn-submit">บันทึกรายรับ</button>
     </form>
-    <nav class="menu-links">
-      <a href="index.html" class="btn-nav btn-blue">🏠 Home</a>
-      <a href="form_bill.html" class="btn-nav btn-yellow">🧾 Expense</a>
-      <a href="dashboard.html" class="btn-nav btn-purple">📊 Dashboard</a>
-    </nav>
+    <div class="bottom-nav">
+      <nav class="menu-links">
+        <a href="index.html" class="nav-btn nav-home">🏠 Home</a>
+        <a href="income.html" class="nav-btn nav-income">🪙 Good Income</a>
+        <a href="form_bill.html" class="nav-btn nav-expense">🧾 Expense</a>
+        <a href="dashboard.html" class="nav-btn nav-dashboard">📊 Dashboard</a>
+      </nav>
+    </div>
   </div>
-
   <script>
-    // เปลี่ยน URL ไปยัง Apps Script ที่ใช้งานจริง
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-
-    function jsonp(url, params, cbName) {
-      return new Promise((resolve, reject) => {
-        window[cbName] = result => {
-          resolve(result);
-          delete window[cbName];
-          script.remove();
-        };
-        const q = new URLSearchParams({ ...params, callback: cbName });
-        const script = document.createElement('script');
-        script.src = `${url}?${q}`;
-        script.onerror = () => {
-          reject(new Error('JSONP load error'));
-          delete window[cbName];
-          script.remove();
-        };
-        document.body.appendChild(script);
-      });
-    }
-
-    document.getElementById('incomeForm').addEventListener('submit', async e => {
+    document.getElementById('incomeForm').addEventListener('submit', async function(e){
       e.preventDefault();
-      const date = e.target.date.value;
-      const income = e.target.income.value;
-      const source = e.target.source.value;
-
-      Swal.fire({
-        title: 'กำลังบันทึกรายรับ...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
+      const form = e.target;
+      const date = form.date.value;
+      const category = form.category.value;
+      const amount = form.amount.value;
+      const note = form.note.value;
+      if(!date || !category || !amount) {
+        Swal.fire('กรุณากรอกข้อมูลให้ครบถ้วน','','warning');
+        return;
+      }
+      Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
+      const data = {date, category, amount, note, type: 'income'};
       try {
-        const cbName = 'cb' + Date.now();
-        // ส่งข้อมูลในรูปแบบที่เหมาะกับ Apps Script (incomelog: วันที่, ยอดขาย, แหล่งรายได้)
-        const data = [{
-          date: date,
-          income: income,
-          source: source
-        }];
-        const params = {
-          sheet: "incomelog",
-          data: JSON.stringify(data)
-        };
-        const resp = await jsonp(scriptURL, params, cbName);
-        if (resp.result === 'success') {
-          Swal.fire('สำเร็จ','บันทึกรายรับเรียบร้อย','success')
-            .then(() => location.href = 'index.html');
+        const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)), {method:'GET'});
+        const resJson = await res.json();
+        Swal.close();
+        if(resJson.result === 'success') {
+          Swal.fire('สำเร็จ','บันทึกข้อมูลแล้ว','success');
+          form.reset();
         } else {
-          Swal.fire('ผิดพลาด', resp.message || 'ไม่สำเร็จ','error');
+          Swal.fire('ผิดพลาด', resJson.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
-      } catch {
-        Swal.fire('ผิดพลาด','ไม่สามารถเชื่อมต่อได้','error');
+      } catch (err) {
+        Swal.close();
+        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดขณะบันทึก', 'error');
       }
     });
   </script>
