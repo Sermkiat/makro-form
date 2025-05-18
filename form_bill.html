@@ -79,15 +79,6 @@
       .container { max-width: 100vw; }
       .single-row { flex-direction: column; gap: 0; }
     }
-    /* ใบเสร็จป๊อบอัพ */
-    .receipt-popup {
-      font-family: monospace !important;
-    }
-    .receipt-table th, .receipt-table td {
-      border: 1px solid #ddd; padding: 3px;
-    }
-    .receipt-table th { background: #eef; }
-    .receipt-table { width: 100%; font-size: 1em; border-collapse: collapse; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -126,6 +117,54 @@
     </div>
   </div>
   <script>
+    // --- Marketlist ---
+    let marketlist = [];
+    let marketlistNames = [];
+
+    function fetchMarketlist() {
+      // ดึง marketlist จาก Google Sheets ผ่าน Apps Script (JSONP)
+      return new Promise((resolve, reject) => {
+        const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=marketlist';
+        const callbackName = 'marketlist_cb_' + Math.random().toString(36).substring(2);
+        window[callbackName] = function(response) {
+          if (response && response.result === 'success') {
+            marketlist = response.data || [];
+            marketlistNames = marketlist.map(item => item.name).filter(Boolean);
+            updateProductDatalist();
+            resolve();
+          } else {
+            reject(response && response.message || 'ไม่สามารถโหลด Marketlist');
+          }
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+        const script = document.createElement('script');
+        script.src = url + `&callback=${callbackName}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    function updateProductDatalist() {
+      // อัปเดต datalist ของชื่อสินค้า
+      let datalist = document.getElementById('product-list');
+      if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'product-list';
+        document.body.appendChild(datalist);
+      }
+      datalist.innerHTML = '';
+      marketlistNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        datalist.appendChild(opt);
+      });
+      // ทุก input[name=name] ต้องอ้างอิง datalist นี้
+      document.querySelectorAll('input[name="name"]').forEach(input => {
+        input.setAttribute('list', 'product-list');
+      });
+    }
+
+    // --- Form ---
     let itemIndex = 0;
     function itemTemplate(idx) {
       return `
@@ -135,14 +174,7 @@
         </div>
         <div class="single-row">
           <div class="col">
-            <input list="product-list" name="name" required placeholder="ชื่อสินค้า">
-            <datalist id="product-list">
-              <option value="นมกล่อง">
-              <option value="ข้าวสาร">
-              <option value="น้ำดื่ม">
-              <option value="ไข่ไก่">
-              <option value="อื่น ๆ">
-            </datalist>
+            <input list="product-list" name="name" required placeholder="ชื่อสินค้า" autocomplete="off">
           </div>
           <div class="col">
             <input list="group-list" name="group" required placeholder="หมวดหมู่สินค้า">
@@ -173,18 +205,42 @@
       </div>
       `;
     }
+
     function addItem(values = {}) {
       const idx = itemIndex++;
       const div = document.createElement('div');
       div.innerHTML = itemTemplate(idx);
+      const el = div.firstElementChild;
       // Pre-fill
       Object.entries(values).forEach(([k, v]) => {
-        const input = div.querySelector(`[name=${k}]`);
+        const input = el.querySelector(`[name=${k}]`);
         if (input) input.value = v;
       });
-      document.getElementById('items-list').appendChild(div.firstElementChild);
+      // Autofill จาก marketlist เมื่อเปลี่ยนชื่อสินค้า
+      const nameInput = el.querySelector('input[name="name"]');
+      if (nameInput) {
+        nameInput.addEventListener('change', function() {
+          autofillFromMarketlist(this, el);
+        });
+      }
+      // อัปเดต datalist สำหรับ input นี้
+      nameInput.setAttribute('list', 'product-list');
+      document.getElementById('items-list').appendChild(el);
       updateItemHeaders();
     }
+
+    function autofillFromMarketlist(input, section) {
+      const val = input.value.trim();
+      const found = marketlist.find(item => item.name === val);
+      if (found) {
+        if (section.querySelector('[name=group]')) section.querySelector('[name=group]').value = found.group || "";
+        if (section.querySelector('[name=unit]')) section.querySelector('[name=unit]').value = found.unit || "";
+        if (section.querySelector('[name=in_unit]')) section.querySelector('[name=in_unit]').value = found.in_unit || "";
+        if (section.querySelector('[name=sec_unit]')) section.querySelector('[name=sec_unit]').value = found.sec_unit || "";
+        // หมายเหตุ: ไม่เติม remarks, price_unit เพราะแต่ละบิลอาจไม่เหมือนเดิม
+      }
+    }
+
     function removeItem(idx) {
       const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
       if (item) item.remove();
@@ -197,8 +253,15 @@
         el.setAttribute('data-idx', i);
       });
       itemIndex = items.length;
+      updateProductDatalist();
     }
-    document.addEventListener('DOMContentLoaded', () => {
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await fetchMarketlist();
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', err, 'error');
+      }
       addItem();
       document.getElementById('billForm').addEventListener('submit', submitForm);
     });
@@ -217,76 +280,11 @@
 
     function submitForm(e) {
       e.preventDefault();
+      document.querySelector('.btn-save').disabled = true;
       const date_bill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
       const records_time = new Date().toISOString();
       const items = getItems();
-
-      // --- Pop-up preview receipt style ---
-      let html = `
-        <div class="receipt-popup">
-          <h3 style="margin:0 0 8px 0;text-align:center;">🧾 ใบเสร็จรายการ</h3>
-          <div><b>วันที่ซื้อ:</b> ${date_bill || '-'}</div>
-          <div><b>แหล่งที่ซื้อ:</b> ${supplier || '-'}</div>
-          <table class="receipt-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>ชื่อสินค้า</th>
-                <th>จำนวน</th>
-                <th>หน่วย</th>
-                <th>ราคา/หน่วย</th>
-                <th>รวม</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-      let sum = 0;
-      items.forEach((item, idx) => {
-        html += `
-          <tr>
-            <td style="text-align:center;">${idx+1}</td>
-            <td>${item.name||''}</td>
-            <td style="text-align:center;">${item.amount||''}</td>
-            <td style="text-align:center;">${item.unit||''}</td>
-            <td style="text-align:right;">${item.price_unit||''}</td>
-            <td style="text-align:right;">${item.total||''}</td>
-          </tr>
-        `;
-        sum += parseFloat(item.total) || 0;
-      });
-      html += `
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="5" style="text-align:right;"><b>รวมทั้งสิ้น</b></td>
-                <td style="text-align:right;"><b>${sum.toFixed(2)}</b></td>
-              </tr>
-            </tfoot>
-          </table>
-          <div style="margin-top:7px;color:#888; font-size:.95em;">* กรุณาตรวจสอบความถูกต้องก่อนกดบันทึก</div>
-        </div>
-      `;
-
-      Swal.fire({
-        title: 'สรุปรายการก่อนบันทึก',
-        html: html,
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'บันทึก',
-        cancelButtonText: 'แก้ไข',
-        customClass: {popup: 'receipt-popup'},
-        width: 500,
-        preConfirm: () => true
-      }).then((result) => {
-        if (result.isConfirmed) {
-          saveToSheet(date_bill, supplier, items, records_time);
-        }
-      });
-    }
-
-    function saveToSheet(date_bill, supplier, items, records_time) {
-      document.querySelector('.btn-save').disabled = true;
       const data = items.map(item => ({
         date_bill,
         supplier,
@@ -301,7 +299,9 @@
         remarks: item.remarks,
         records_time: records_time,
       }));
+
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
       const callbackName = 'callback_' + Math.random().toString(36).substring(2);
       window[callbackName] = function(response) {
@@ -312,6 +312,7 @@
           document.getElementById('billForm').reset();
           document.getElementById('items-list').innerHTML = '';
           addItem();
+          updateProductDatalist();
         } else {
           Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
