@@ -79,7 +79,6 @@
       .container { max-width: 100vw; }
       .single-row { flex-direction: column; gap: 0; }
     }
-
     /* Receipt-style popup */
     .receipt-popup {
       font-family: 'Kanit', monospace !important;
@@ -91,18 +90,13 @@
       padding: 16px 12px 12px 12px;
       box-shadow: 0 2px 10px #0002;
     }
-    .receipt-header {
-      text-align: center;
-      font-size: 1.15em;
-      font-weight: bold;
-      letter-spacing: 1px;
-      margin-bottom: 2px;
-    }
     .receipt-meta {
       font-size: 0.96em;
       margin-bottom: 8px;
       color: #666;
-      text-align: center;
+      text-align: left;
+      line-height: 1.4;
+      font-weight: 400;
     }
     .receipt-table {
       width: 100%;
@@ -111,26 +105,42 @@
       margin-bottom: 10px;
       background: #fff;
     }
-    .receipt-table th, .receipt-table td {
+    .receipt-table tr.item-row {
       border-bottom: 1px dotted #bbb;
+    }
+    .receipt-table td, .receipt-table th {
+      border: none;
       padding: 2px 4px;
-      text-align: right;
     }
     .receipt-table th {
       background: #eee;
       font-weight: bold;
-      text-align: center;
-    }
-    .receipt-table td.name {
       text-align: left;
+      font-size: .97em;
+      border-bottom: 1.5px solid #bbb;
     }
+    .receipt-item-title {
+      font-weight: bold;
+      font-size: 1.04em;
+      line-height: 1.2;
+    }
+    .receipt-item-detail {
+      color: #666;
+      font-size: 0.91em;
+      margin-left: 10px;
+      margin-bottom: 1px;
+      line-height: 1.1;
+    }
+    .receipt-table .right { text-align: right;}
+    .receipt-table .center { text-align: center;}
     .receipt-sumrow td {
       font-weight: bold;
       background: #f7f7f7;
       border-top: 1.5px solid #222;
+      font-size: 1.03em;
     }
     .receipt-footer {
-      font-size: .92em;
+      font-size: .93em;
       color: #888;
       text-align: center;
       margin-top: 7px;
@@ -342,32 +352,43 @@
       const records_time = new Date().toISOString();
       const items = getItems();
 
-      // Build receipt HTML
+      // Build receipt HTML (UI ใหม่ตามคำสั่ง)
       let html = `<div class="receipt-popup">
-        <div class="receipt-header">ใบเสร็จรับเงิน</div>
-        <div class="receipt-meta">วันที่ซื้อ: ${date_bill || '-'}<br>แหล่งที่ซื้อ: ${supplier || '-'}</div>
+        <div class="receipt-meta">
+          <div><b>วันที่ซื้อ:</b> ${date_bill || '-'}</div>
+          <div><b>แหล่งที่ซื้อ:</b> ${supplier || '-'}</div>
+        </div>
         <table class="receipt-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>ชื่อสินค้า</th>
-              <th>จำนวน</th>
-              <th>หน่วย</th>
-              <th>ราคา/หน่วย</th>
-              <th>รวม</th>
+              <th style="width:2em;">#</th>
+              <th>รายละเอียด</th>
+              <th class="center" style="width:2.5em;">จำนวน</th>
+              <th class="center" style="width:3em;">หน่วย</th>
+              <th class="right" style="width:3.5em;">ราคา/หน่วย</th>
+              <th class="right" style="width:3.5em;">รวม</th>
             </tr>
           </thead>
           <tbody>
       `;
       let sum = 0;
       items.forEach((item, idx) => {
-        html += `<tr>
-          <td>${idx+1}</td>
-          <td class="name">${item.name||''}</td>
-          <td>${item.amount||''}</td>
-          <td>${item.unit||''}</td>
-          <td>${item.price_unit||''}</td>
-          <td>${item.total||''}</td>
+        // รายการสินค้า: ชื่อ (ตัวหนา), บรรทัดถัดไป: หมวด, หน่วยย่อย, หมายเหตุ (เล็ก, เยื้อง)
+        let subDetail =
+          ((item.group ? `หมวด: ${item.group}` : '') +
+          (item.in_unit ? `, หน่วยย่อย: ${item.in_unit}` : '') +
+          (item.sec_unit ? `, หน่วยในหน่วย: ${item.sec_unit}` : '') +
+          (item.remarks ? `, หมายเหตุ: ${item.remarks}` : '')).replace(/^, /, '');
+        html += `<tr class="item-row">
+          <td class="center">${idx+1}</td>
+          <td>
+            <div class="receipt-item-title">${item.name||'-'}</div>
+            ${subDetail ? `<div class="receipt-item-detail" style="margin-left:1em;">${subDetail}</div>` : ''}
+          </td>
+          <td class="center">${item.amount||''}</td>
+          <td class="center">${item.unit||''}</td>
+          <td class="right">${item.price_unit||''}</td>
+          <td class="right">${item.total||''}</td>
         </tr>`;
         sum += parseFloat(item.total) || 0;
       });
@@ -375,8 +396,8 @@
           </tbody>
           <tfoot>
             <tr class="receipt-sumrow">
-              <td colspan="5">รวมทั้งสิ้น</td>
-              <td>${sum.toFixed(2)}</td>
+              <td colspan="5" class="right">รวมทั้งสิ้น</td>
+              <td class="right">${sum.toFixed(2)}</td>
             </tr>
           </tfoot>
         </table>
@@ -391,7 +412,7 @@
         confirmButtonText: 'บันทึก',
         cancelButtonText: 'แก้ไข',
         customClass: {popup: 'receipt-popup'},
-        width: 430,
+        width: 440,
         preConfirm: () => true
       }).then((result) => {
         if (result.isConfirmed) {
