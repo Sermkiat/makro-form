@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>บันทึกบิล / รายจ่าย</title>
+  <title>บันทึกบิล / รายจ่าย (ทดสอบเชื่อมต่อ - ไม่มี marketlist)</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #5fa0ff; font-family: 'Noto Sans', sans-serif; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; }
@@ -41,7 +41,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>บันทึกบิล/รายจ่าย</h1>
+    <h1>บันทึกบิล/รายจ่าย (ทดสอบเชื่อมต่อ)</h1>
     <form id="billForm" novalidate>
       <div class="form-row">
         <div class="form-group">
@@ -67,7 +67,6 @@
     </nav>
   </div>
 
-  <datalist id="namelist"></datalist>
   <datalist id="grouplist">
     <option value="กับข้าว"></option>
     <option value="กินข้าว กินขนม"></option>
@@ -93,7 +92,7 @@
       <h2>รายการที่ <span class="item-index">1</span></h2>
       <div class="item-grid header">
         <div>
-          <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" required autocomplete="off" />
+          <input type="text" class="name" placeholder="ชื่อสินค้า" required autocomplete="off" />
           <div class="error name-error" style="display:none"></div>
         </div>
         <div>
@@ -134,21 +133,6 @@
   <script>
     // URL API จาก Google Apps Script ของคุณ
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxHoPVZu7QzSb-jHx4ssVRzZqSHO9ZoSTaXS1YcRAc1DxMPF4Y1oV8pUkbMQJHgUjy7/exec';
-    let productList = [];
-
-    // โหลดข้อมูลสินค้าสำหรับ autocomplete
-    function loadProductData() {
-      fetch(WEB_APP_URL + '?action=marketlist')
-        .then(r => r.json())
-        .then(list => {
-          productList = list;
-          const dl = document.getElementById('namelist');
-          dl.innerHTML = list.map(p => `<option value="${p.nm}"></option>`).join('');
-        })
-        .catch(() => {
-          Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดรายการสินค้าได้', 'error');
-        });
-    }
 
     // เพิ่มแถวสินค้าใหม่
     function addItemRow(values = {}) {
@@ -166,19 +150,6 @@
       row.querySelector('.in_unit').value = values.in_unit || '';
       row.querySelector('.sec_unit').value = values.sec_unit || '';
       row.querySelector('.note').value = values.note || '';
-
-      // autocomplete เมื่อเลือกชื่อสินค้า
-      row.querySelector('.name').addEventListener('change', e => {
-        const sel = productList.find(p => p.nm === e.target.value);
-        if (sel) {
-          const parent = e.target.closest('.item');
-          parent.querySelector('.group').value = sel.gr || '';
-          parent.querySelector('.unit').value = sel.un || '';
-          parent.querySelector('.in_unit').value = sel.in_unit || '';
-          parent.querySelector('.sec_unit').value = sel.sec_unit || '';
-          parent.querySelector('.amount').focus();
-        }
-      });
 
       // remove button
       row.querySelector('.remove').onclick = () => { 
@@ -315,7 +286,6 @@
 
     // init
     document.getElementById('date_bill').valueAsDate = new Date();
-    loadProductData(); // โหลดรายการสินค้า
     addItemRow(); // เพิ่มแถวแรก
 
   </script>
