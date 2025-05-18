@@ -121,27 +121,27 @@
     let marketlist = [];
     let marketlistNames = [];
 
-    async function fetchMarketlist() {
-      // ดึง marketlist จาก Google Sheets ผ่าน Apps Script (fetch POST)
-      try {
-        const formData = new URLSearchParams();
-        formData.append("action", "marketlist");
-        const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-        const res = await fetch(url, {
-          method: "POST",
-          body: formData
-        });
-        const response = await res.json();
-        if (response && response.result === 'success') {
-          marketlist = response.data || [];
-          marketlistNames = marketlist.map(item => item.name).filter(Boolean);
-          updateProductDatalist();
-        } else {
-          throw new Error(response && response.message || "Marketlist load error");
-        }
-      } catch (err) {
-        Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
-      }
+    function fetchMarketlist() {
+      // ดึง marketlist จาก Google Sheets ผ่าน Apps Script (JSONP)
+      return new Promise((resolve, reject) => {
+        const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=marketlist';
+        const callbackName = 'marketlist_cb_' + Math.random().toString(36).substring(2);
+        window[callbackName] = function(response) {
+          if (response && response.result === 'success') {
+            marketlist = response.data || [];
+            marketlistNames = marketlist.map(item => item.name).filter(Boolean);
+            updateProductDatalist();
+            resolve();
+          } else {
+            reject(response && response.message || 'ไม่สามารถโหลด Marketlist');
+          }
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+        const script = document.createElement('script');
+        script.src = url + `&callback=${callbackName}`;
+        document.body.appendChild(script);
+      });
     }
 
     function updateProductDatalist() {
@@ -257,7 +257,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-      await fetchMarketlist();
+      try {
+        await fetchMarketlist();
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', err, 'error');
+      }
       addItem();
       document.getElementById('billForm').addEventListener('submit', submitForm);
     });
@@ -298,13 +302,9 @@
 
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
-      fetch('https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.json())
-      .then(response => {
+      const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
+      const callbackName = 'callback_' + Math.random().toString(36).substring(2);
+      window[callbackName] = function(response) {
         Swal.close();
         document.querySelector('.btn-save').disabled = false;
         if (response && response.result === 'success') {
@@ -316,12 +316,12 @@
         } else {
           Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
-      })
-      .catch(err => {
-        Swal.close();
-        document.querySelector('.btn-save').disabled = false;
-        Swal.fire('ผิดพลาด', err.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-      });
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      const script = document.createElement('script');
+      script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
+      document.body.appendChild(script);
     }
 
     function autoCalcTotal(el) {
