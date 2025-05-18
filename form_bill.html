@@ -385,8 +385,8 @@
       if (!res.isConfirmed) return;
       saveToSheet(date_bill, supplier, items, new Date().toISOString());
     }
-    // ---------- Save/Submit (ปรับใหม่ ใช้ POST) ----------
-    async function saveToSheet(date_bill, supplier, items, records_time) {
+    // ---------- Save/Submit ----------
+    function saveToSheet(date_bill, supplier, items, records_time) {
       document.querySelector('.btn-save').disabled = true;
       const data = items.map(item => ({
         date_bill,
@@ -404,15 +404,10 @@
       }));
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data })
-        });
-        const response = await res.json();
-        document.querySelector('.btn-save').disabled = false;
+      const callbackName = 'callback_' + Math.random().toString(36).substring(2);
+      window[callbackName] = function(response) {
         Swal.close();
+        document.querySelector('.btn-save').disabled = false;
         if (response && response.result === 'success') {
           Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success');
           document.getElementById('billForm').reset();
@@ -422,11 +417,12 @@
         } else {
           Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
-      } catch (err) {
-        document.querySelector('.btn-save').disabled = false;
-        Swal.close();
-        Swal.fire('ผิดพลาด', err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
-      }
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      const script = document.createElement('script');
+      script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
+      document.body.appendChild(script);
     }
     function autoCalcTotal(el) {
       const section = el.closest('.item-section');
