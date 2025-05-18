@@ -79,72 +79,6 @@
       .container { max-width: 100vw; }
       .single-row { flex-direction: column; gap: 0; }
     }
-    /* Receipt-style popup */
-    .receipt-popup {
-      font-family: 'Kanit', monospace !important;
-      max-width: 400px;
-      margin: 0 auto;
-      border: 1px dashed #aaa;
-      background: #fffefa;
-      border-radius: 12px;
-      padding: 16px 12px 12px 12px;
-      box-shadow: 0 2px 10px #0002;
-    }
-    .receipt-meta {
-      font-size: 0.96em;
-      margin-bottom: 8px;
-      color: #666;
-      text-align: left;
-      line-height: 1.4;
-      font-weight: 400;
-    }
-    .receipt-table {
-      width: 100%;
-      font-size: 1em;
-      border-collapse: collapse;
-      margin-bottom: 10px;
-      background: #fff;
-    }
-    .receipt-table tr.item-row {
-      border-bottom: 1px dotted #bbb;
-    }
-    .receipt-table td, .receipt-table th {
-      border: none;
-      padding: 2px 4px;
-    }
-    .receipt-table th {
-      background: #eee;
-      font-weight: bold;
-      text-align: left;
-      font-size: .97em;
-      border-bottom: 1.5px solid #bbb;
-    }
-    .receipt-item-title {
-      font-weight: bold;
-      font-size: 1.04em;
-      line-height: 1.2;
-    }
-    .receipt-item-detail {
-      color: #666;
-      font-size: 0.91em;
-      margin-left: 10px;
-      margin-bottom: 1px;
-      line-height: 1.1;
-    }
-    .receipt-table .right { text-align: right;}
-    .receipt-table .center { text-align: center;}
-    .receipt-sumrow td {
-      font-weight: bold;
-      background: #f7f7f7;
-      border-top: 1.5px solid #222;
-      font-size: 1.03em;
-    }
-    .receipt-footer {
-      font-size: .93em;
-      color: #888;
-      text-align: center;
-      margin-top: 7px;
-    }
   </style>
 </head>
 <body>
@@ -186,9 +120,7 @@
     // --- Marketlist ---
     let marketlist = [];
     let marketlistNames = [];
-
     function fetchMarketlist() {
-      // ดึง marketlist จาก Google Sheets ผ่าน Apps Script (JSONP)
       return new Promise((resolve, reject) => {
         const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=marketlist';
         const callbackName = 'marketlist_cb_' + Math.random().toString(36).substring(2);
@@ -209,9 +141,7 @@
         document.body.appendChild(script);
       });
     }
-
     function updateProductDatalist() {
-      // อัปเดต datalist ของชื่อสินค้า
       let datalist = document.getElementById('product-list');
       if (!datalist) {
         datalist = document.createElement('datalist');
@@ -224,12 +154,10 @@
         opt.value = name;
         datalist.appendChild(opt);
       });
-      // ทุก input[name=name] ต้องอ้างอิง datalist นี้
       document.querySelectorAll('input[name="name"]').forEach(input => {
         input.setAttribute('list', 'product-list');
       });
     }
-
     // --- Form ---
     let itemIndex = 0;
     function itemTemplate(idx) {
@@ -271,30 +199,25 @@
       </div>
       `;
     }
-
     function addItem(values = {}) {
       const idx = itemIndex++;
       const div = document.createElement('div');
       div.innerHTML = itemTemplate(idx);
       const el = div.firstElementChild;
-      // Pre-fill
       Object.entries(values).forEach(([k, v]) => {
         const input = el.querySelector(`[name=${k}]`);
         if (input) input.value = v;
       });
-      // Autofill จาก marketlist เมื่อเปลี่ยนชื่อสินค้า
       const nameInput = el.querySelector('input[name="name"]');
       if (nameInput) {
         nameInput.addEventListener('change', function() {
           autofillFromMarketlist(this, el);
         });
       }
-      // อัปเดต datalist สำหรับ input นี้
       nameInput.setAttribute('list', 'product-list');
       document.getElementById('items-list').appendChild(el);
       updateItemHeaders();
     }
-
     function autofillFromMarketlist(input, section) {
       const val = input.value.trim();
       const found = marketlist.find(item => item.name === val);
@@ -303,10 +226,8 @@
         if (section.querySelector('[name=unit]')) section.querySelector('[name=unit]').value = found.unit || "";
         if (section.querySelector('[name=in_unit]')) section.querySelector('[name=in_unit]').value = found.in_unit || "";
         if (section.querySelector('[name=sec_unit]')) section.querySelector('[name=sec_unit]').value = found.sec_unit || "";
-        // หมายเหตุ: ไม่เติม remarks, price_unit เพราะแต่ละบิลอาจไม่เหมือนเดิม
       }
     }
-
     function removeItem(idx) {
       const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
       if (item) item.remove();
@@ -321,7 +242,6 @@
       itemIndex = items.length;
       updateProductDatalist();
     }
-
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         await fetchMarketlist();
@@ -331,7 +251,6 @@
       addItem();
       document.getElementById('billForm').addEventListener('submit', previewAndConfirmReceipt);
     });
-
     function getItems() {
       const items = [];
       document.querySelectorAll('.item-section').forEach((section) => {
@@ -343,84 +262,52 @@
       });
       return items;
     }
-
     // ---------- Receipt Preview and Confirm ----------
-    function previewAndConfirmReceipt(e) {
+    async function previewAndConfirmReceipt(e) {
       e.preventDefault();
       const date_bill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
-      const records_time = new Date().toISOString();
       const items = getItems();
-
-      // Build receipt HTML (UI ใหม่ตามคำสั่ง)
-      let html = `<div class="receipt-popup">
-        <div class="receipt-meta">
-          <div><b>วันที่ซื้อ:</b> ${date_bill || '-'}</div>
-          <div><b>แหล่งที่ซื้อ:</b> ${supplier || '-'}</div>
-        </div>
-        <table class="receipt-table">
-          <thead>
-            <tr>
-              <th style="width:2em;">#</th>
-              <th>รายละเอียด</th>
-              <th class="center" style="width:2.5em;">จำนวน</th>
-              <th class="center" style="width:3em;">หน่วย</th>
-              <th class="right" style="width:3.5em;">ราคา/หน่วย</th>
-              <th class="right" style="width:3.5em;">รวม</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
       let sum = 0;
-      items.forEach((item, idx) => {
-        // รายการสินค้า: ชื่อ (ตัวหนา), บรรทัดถัดไป: หมวด, หน่วยย่อย, หมายเหตุ (เล็ก, เยื้อง)
-        let subDetail =
-          ((item.group ? `หมวด: ${item.group}` : '') +
-          (item.in_unit ? `, หน่วยย่อย: ${item.in_unit}` : '') +
-          (item.sec_unit ? `, หน่วยในหน่วย: ${item.sec_unit}` : '') +
-          (item.remarks ? `, หมายเหตุ: ${item.remarks}` : '')).replace(/^, /, '');
-        html += `<tr class="item-row">
-          <td class="center">${idx+1}</td>
-          <td>
-            <div class="receipt-item-title">${item.name||'-'}</div>
-            ${subDetail ? `<div class="receipt-item-detail" style="margin-left:1em;">${subDetail}</div>` : ''}
-          </td>
-          <td class="center">${item.amount||''}</td>
-          <td class="center">${item.unit||''}</td>
-          <td class="right">${item.price_unit||''}</td>
-          <td class="right">${item.total||''}</td>
-        </tr>`;
-        sum += parseFloat(item.total) || 0;
+      // Receipt-style HTML (readable, simple, per line)
+      let html = `
+        <div style="font-family:Kanit,monospace;font-size:1.07em;text-align:left;line-height:1.6">
+          <div><b>วันที่:</b> ${date_bill||'-'}</div>
+          <div><b>ร้าน:</b> ${supplier||'-'}</div>
+          <hr style="margin:8px 0">
+      `;
+      items.forEach((item) => {
+        const total = parseFloat(item.total) || 0;
+        sum += total;
+        html += `
+          <div style="margin-bottom:8px;">
+            <b>${item.name||'-'}</b>
+            <span style="float:right;">${total.toFixed(2)}</span><br>
+            <span style="font-size:0.97em;color:#555;margin-left:1em;">
+              ${item.amount||'-'} x ${item.unit||'-'} @ ${item.price_unit||'-'}
+              ${item.group ? `, หมวด: ${item.group}` : ''}
+              ${item.in_unit ? `, ย่อย: ${item.in_unit}` : ''}
+              ${item.sec_unit ? `, ในหน่วย: ${item.sec_unit}` : ''}
+              ${item.remarks ? `, หมายเหตุ: ${item.remarks}` : ''}
+            </span>
+          </div>
+        `;
       });
-      html += `
-          </tbody>
-          <tfoot>
-            <tr class="receipt-sumrow">
-              <td colspan="5" class="right">รวมทั้งสิ้น</td>
-              <td class="right">${sum.toFixed(2)}</td>
-            </tr>
-          </tfoot>
-        </table>
-        <div class="receipt-footer">* กรุณาตรวจสอบรายการก่อนบันทึก</div>
-      </div>`;
-
-      Swal.fire({
-        title: 'สรุปข้อมูลก่อนบันทึก',
-        html: html,
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'บันทึก',
-        cancelButtonText: 'แก้ไข',
-        customClass: {popup: 'receipt-popup'},
-        width: 440,
-        preConfirm: () => true
-      }).then((result) => {
-        if (result.isConfirmed) {
-          saveToSheet(date_bill, supplier, items, records_time);
-        }
+      html += `<hr style="margin:8px 0">
+        <div style="font-weight:bold;text-align:right;">รวมทั้งสิ้น ${sum.toFixed(2)} บาท</div>
+        <div style="color:#888;font-size:0.97em;text-align:center;margin-top:8px;">* กรุณาตรวจสอบรายการก่อนบันทึก</div>
+        </div>
+      `;
+      const res = await Swal.fire({
+        title:'ยืนยันข้อมูล',
+        html,
+        showCancelButton:true,
+        confirmButtonText:'บันทึก',
+        cancelButtonText:'กลับ'
       });
+      if (!res.isConfirmed) return;
+      saveToSheet(date_bill, supplier, items, new Date().toISOString());
     }
-
     // ---------- Save/Submit ----------
     function saveToSheet(date_bill, supplier, items, records_time) {
       document.querySelector('.btn-save').disabled = true;
@@ -460,7 +347,6 @@
       script.src = `${url}?data=${encodeURIComponent(JSON.stringify(data))}&callback=${callbackName}`;
       document.body.appendChild(script);
     }
-
     function autoCalcTotal(el) {
       const section = el.closest('.item-section');
       if (!section) return;
