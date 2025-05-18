@@ -31,6 +31,11 @@
     .btn-blue { background: #3b82f6; }
     .btn-green { background: #10b981; }
     .btn-purple { background: #8b3ced; }
+    .item .error { color: #ef4444; font-size: 12px; margin-top: 2px; }
+    .form-error { color: #ef4444; font-size: 14px; text-align: center; margin-bottom: 8px; }
+    @media (max-width: 480px) {
+      .container { width: 96vw; padding: 12px 4vw;}
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -48,6 +53,7 @@
           <input type="text" id="supplier" list="supplierlist" placeholder="เลือกแหล่งที่ซื้อ" required />
         </div>
       </div>
+      <div id="form-error" class="form-error" style="display:none"></div>
       <div class="items" id="items-container"></div>
       <div class="btn-row">
         <button type="button" id="add-item">+ เพิ่มรายการใหม่</button>
@@ -86,44 +92,80 @@
     <div class="item">
       <h2>รายการที่ <span class="item-index">1</span></h2>
       <div class="item-grid header">
-        <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" />
-        <input type="text" class="group" list="grouplist" placeholder="หมวดหมู่สินค้า" />
+        <div>
+          <input type="text" class="name" list="namelist" placeholder="ชื่อสินค้า" required autocomplete="off" />
+          <div class="error name-error" style="display:none"></div>
+        </div>
+        <div>
+          <input type="text" class="group" list="grouplist" placeholder="หมวดหมู่สินค้า" required autocomplete="off" />
+          <div class="error group-error" style="display:none"></div>
+        </div>
       </div>
       <div class="item-grid main">
-        <input type="number" min="0" class="amount" placeholder="จำนวน" required inputmode="numeric" />
-        <input type="text" class="unit" placeholder="หน่วย" />
-        <input type="number" step="0.01" min="0" class="price_unit" placeholder="ราคาต่อหน่วย" required inputmode="decimal" />
-        <input type="text" class="total" readonly placeholder="รวม" />
+        <div>
+          <input type="number" min="0" class="amount" placeholder="จำนวน" required inputmode="numeric" />
+          <div class="error amount-error" style="display:none"></div>
+        </div>
+        <div>
+          <input type="text" class="unit" placeholder="หน่วย" autocomplete="off" />
+        </div>
+        <div>
+          <input type="number" step="0.01" min="0" class="price_unit" placeholder="ราคาต่อหน่วย" required inputmode="decimal" />
+        </div>
+        <div>
+          <input type="text" class="total" readonly placeholder="รวม" />
+        </div>
       </div>
       <div class="item-grid secondary">
-        <input type="number" min="0" class="in_unit" placeholder="หน่วยย่อย" />
-        <input type="text" class="sec_unit" placeholder="หน่วยในหน่วย" />
-        <input type="text" class="note" placeholder="หมายเหตุ" />
+        <div>
+          <input type="number" min="0" class="in_unit" placeholder="หน่วยย่อย" />
+        </div>
+        <div>
+          <input type="text" class="sec_unit" placeholder="หน่วยในหน่วย" />
+        </div>
+        <div>
+          <input type="text" class="note" placeholder="หมายเหตุ" />
+        </div>
       </div>
       <button type="button" class="remove">ลบ</button>
     </div>
   </template>
 
   <script>
+    // URL API จาก Google Apps Script ของคุณ
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxHBToBh3J0NHst9kKrDssUOcha4eXKHBF7-55WVROMwDqMCf-c-5ZwC_AiJVBQ5Zaz/exec';
     let productList = [];
 
-    // แก้ไข: โหลดข้อมูล MarketList อัตโนมัติ สำหรับ autocomplete
+    // โหลดข้อมูลสินค้าสำหรับ autocomplete
     function loadProductData() {
       fetch(WEB_APP_URL + '?action=marketlist')
         .then(r => r.json())
         .then(list => {
           productList = list;
-          // สร้าง <option> ใน namelist datalist
           const dl = document.getElementById('namelist');
           dl.innerHTML = list.map(p => `<option value="${p.nm}"></option>`).join('');
+        })
+        .catch(() => {
+          Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดรายการสินค้าได้', 'error');
         });
     }
 
-    function addItemRow() {
+    // เพิ่มแถวสินค้าใหม่
+    function addItemRow(values = {}) {
       const container = document.getElementById('items-container');
       const tpl = document.getElementById('item-template').content.cloneNode(true);
       const row = tpl.querySelector('.item');
+
+      // กรอกค่าเริ่มต้นถ้ามี
+      row.querySelector('.name').value = values.nm || '';
+      row.querySelector('.group').value = values.gr || '';
+      row.querySelector('.amount').value = values.am || '';
+      row.querySelector('.unit').value = values.un || '';
+      row.querySelector('.price_unit').value = values.pu || '';
+      row.querySelector('.total').value = values.to || '';
+      row.querySelector('.in_unit').value = values.in_unit || '';
+      row.querySelector('.sec_unit').value = values.sec_unit || '';
+      row.querySelector('.note').value = values.note || '';
 
       // autocomplete เมื่อเลือกชื่อสินค้า
       row.querySelector('.name').addEventListener('change', e => {
@@ -139,13 +181,17 @@
       });
 
       // remove button
-      row.querySelector('.remove').onclick = () => { row.remove(); updateItemIndices(); };
+      row.querySelector('.remove').onclick = () => { 
+        row.remove(); 
+        updateItemIndices(); 
+      };
 
       container.appendChild(row);
       updateItemIndices();
       row.querySelector('.name').focus();
     }
 
+    // ลำดับรายการ
     function updateItemIndices() {
       document.querySelectorAll('#items-container .item').forEach((el, i) => {
         el.querySelector('.item-index').textContent = i+1;
@@ -162,53 +208,116 @@
       }
     });
 
-    document.getElementById('add-item').onclick = addItemRow;
+    // เพิ่มแถวเมื่อกดปุ่ม
+    document.getElementById('add-item').onclick = () => addItemRow();
 
-    document.getElementById('billForm').addEventListener('submit', e => {
+    // validate ช่องข้อมูลแต่ละรายการ
+    function validateItems() {
+      let valid = true;
+      document.querySelectorAll('#items-container .item').forEach(row => {
+        const name = row.querySelector('.name');
+        const group = row.querySelector('.group');
+        const amount = row.querySelector('.amount');
+        // ซ่อน error ก่อน
+        row.querySelector('.name-error').style.display = 'none';
+        row.querySelector('.group-error').style.display = 'none';
+        row.querySelector('.amount-error').style.display = 'none';
+
+        if (!name.value.trim()) {
+          row.querySelector('.name-error').textContent = 'กรุณากรอกชื่อสินค้า';
+          row.querySelector('.name-error').style.display = '';
+          valid = false;
+        }
+        if (!group.value.trim()) {
+          row.querySelector('.group-error').textContent = 'กรุณากรอกหมวดหมู่';
+          row.querySelector('.group-error').style.display = '';
+          valid = false;
+        }
+        if (!(parseFloat(amount.value) > 0)) {
+          row.querySelector('.amount-error').textContent = 'จำนวนต้องมากกว่า 0';
+          row.querySelector('.amount-error').style.display = '';
+          valid = false;
+        }
+      });
+      return valid;
+    }
+
+    // validate ฟอร์ม
+    function validateForm() {
+      const date_bill = document.getElementById('date_bill').value;
+      const supplier = document.getElementById('supplier').value.trim();
+      let errorMsg = '';
+      if (!date_bill) errorMsg = 'กรุณาเลือกวันที่ซื้อ';
+      else if (!supplier) errorMsg = 'กรุณาระบุแหล่งที่ซื้อ';
+      if (errorMsg) {
+        document.getElementById('form-error').textContent = errorMsg;
+        document.getElementById('form-error').style.display = '';
+        return false;
+      }
+      document.getElementById('form-error').style.display = 'none';
+      return true;
+    }
+
+    // กดบันทึกฟอร์ม
+    document.getElementById('billForm').addEventListener('submit', async e => {
       e.preventDefault();
-      if (!e.target.checkValidity()) { e.target.reportValidity(); return; }
+      if (!validateForm() || !validateItems()) return;
       const dateBill = document.getElementById('date_bill').value;
       const supplier = document.getElementById('supplier').value;
       const items = Array.from(document.querySelectorAll('#items-container .item')).map(row => {
         const am = parseFloat(row.querySelector('.amount').value) || 0;
         return { 
-          nm: row.querySelector('.name').value,
-          gr: row.querySelector('.group').value,
+          nm: row.querySelector('.name').value.trim(),
+          gr: row.querySelector('.group').value.trim(),
           am: am,
-          un: row.querySelector('.unit').value,
+          un: row.querySelector('.unit').value.trim(),
           pu: parseFloat(row.querySelector('.price_unit').value) || 0,
           to: parseFloat(row.querySelector('.total').value) || 0,
-          in_unit: row.querySelector('.in_unit').value,
-          sec_unit: row.querySelector('.sec_unit').value,
-          note: row.querySelector('.note').value
+          in_unit: row.querySelector('.in_unit').value.trim(),
+          sec_unit: row.querySelector('.sec_unit').value.trim(),
+          note: row.querySelector('.note').value.trim()
         };
-      }).filter(it => it.am>0);
-      if (items.length===0) { Swal.fire('ไม่มีรายการ','ต้องกรอกสินค้าอย่างน้อย 1 รายการ','warning'); return; }
+      }).filter(it => it.am>0 && it.nm && it.gr);
+      if (items.length===0) { 
+        Swal.fire('ไม่มีรายการ','ต้องกรอกสินค้าอย่างน้อย 1 รายการ','warning'); 
+        return; 
+      }
       // ยืนยัน
       let html=`วันที่: ${dateBill}<br>ร้าน: ${supplier}<hr>`;
       items.forEach(it=> html+=`${it.nm}: ${it.am} x ${it.pu} = ${it.to}<br>`);
       html+=`<hr>รวม ${(items.reduce((s,it)=>s+it.to,0)).toFixed(2)} บาท`;
-      Swal.fire({ title:'ยืนยันข้อมูล', html, showCancelButton:true, confirmButtonText:'บันทึก', cancelButtonText:'กลับ'}).then(res=>{
-        if (!res.isConfirmed) return;
-        fetch(WEB_APP_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ sheet:'datalog', date_bill:dateBill, supplier, items })
-        })
-        .then(r=>r.json())
-        .then(r=>{
-          if(r.success){ Swal.fire('สำเร็จ','บันทึกเรียบร้อย','success').then(()=>{
-            document.getElementById('billForm').reset(); document.getElementById('items-container').innerHTML=''; document.getElementById('date_bill').valueAsDate=new Date(); addItemRow();
-          }); }
-          else Swal.fire('Error', r.message,'error');
-        }).catch(()=> Swal.fire('Error','ไม่สามารถเชื่อมต่อ','error'));
+      const res = await Swal.fire({ title:'ยืนยันข้อมูล', html, showCancelButton:true, confirmButtonText:'บันทึก', cancelButtonText:'กลับ'});
+      if (!res.isConfirmed) return;
+      // ส่งข้อมูล
+      Swal.showLoading();
+      fetch(WEB_APP_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ sheet:'datalog', date_bill:dateBill, supplier, items })
+      })
+      .then(r=>r.json())
+      .then(r=>{
+        Swal.close();
+        if(r.success){
+          Swal.fire('สำเร็จ','บันทึกเรียบร้อย','success').then(()=>{
+            document.getElementById('billForm').reset(); 
+            document.getElementById('items-container').innerHTML=''; 
+            document.getElementById('date_bill').valueAsDate=new Date(); 
+            addItemRow();
+          });
+        }
+        else Swal.fire('Error', r.message,'error');
+      }).catch(()=> {
+        Swal.close();
+        Swal.fire('Error','ไม่สามารถเชื่อมต่อ','error');
       });
     });
 
     // init
     document.getElementById('date_bill').valueAsDate = new Date();
-    loadProductData(); // สำคัญ! ให้โหลดรายการสินค้าอัตโนมัติ
-    addItemRow(); // เพิ่มแถวแรกอัตโนมัติ
+    loadProductData(); // โหลดรายการสินค้า
+    addItemRow(); // เพิ่มแถวแรก
+
   </script>
 </body>
 </html>
