@@ -108,7 +108,17 @@
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxHBToBh3J0NHst9kKrDssUOcha4eXKHBF7-55WVROMwDqMCf-c-5ZwC_AiJVBQ5Zaz/exec';
     let productList = [];
 
-   
+    // แก้ไข: โหลดข้อมูล MarketList อัตโนมัติ สำหรับ autocomplete
+    function loadProductData() {
+      fetch(WEB_APP_URL + '?action=marketlist')
+        .then(r => r.json())
+        .then(list => {
+          productList = list;
+          // สร้าง <option> ใน namelist datalist
+          const dl = document.getElementById('namelist');
+          dl.innerHTML = list.map(p => `<option value="${p.nm}"></option>`).join('');
+        });
+    }
 
     function addItemRow() {
       const container = document.getElementById('items-container');
@@ -117,11 +127,11 @@
 
       // autocomplete เมื่อเลือกชื่อสินค้า
       row.querySelector('.name').addEventListener('change', e => {
-        const sel = productList.find(p => p.name === e.target.value);
+        const sel = productList.find(p => p.nm === e.target.value);
         if (sel) {
           const parent = e.target.closest('.item');
-          parent.querySelector('.group').value = sel.group || '';
-          parent.querySelector('.unit').value = sel.unit || '';
+          parent.querySelector('.group').value = sel.gr || '';
+          parent.querySelector('.unit').value = sel.un || '';
           parent.querySelector('.in_unit').value = sel.in_unit || '';
           parent.querySelector('.sec_unit').value = sel.sec_unit || '';
           parent.querySelector('.amount').focus();
@@ -197,7 +207,8 @@
 
     // init
     document.getElementById('date_bill').valueAsDate = new Date();
-    loadProductData();
+    loadProductData(); // สำคัญ! ให้โหลดรายการสินค้าอัตโนมัติ
+    addItemRow(); // เพิ่มแถวแรกอัตโนมัติ
   </script>
 </body>
 </html>
