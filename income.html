@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>บันทึกรายรับประจำวัน</title>
   <style>
-    /* ==========================
-       UI Styling เหมือน expense.html
-    ========================== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #5fa0ff; font-family: 'Noto Sans', sans-serif;
            display: flex; justify-content: center; align-items: flex-start;
@@ -93,19 +90,24 @@
       </div>
       <div class="form-group">
         <label>💰 ยอดขาย</label>
-        <input type="number" name="amount" step="0.01" min="0" required inputmode="decimal" />
+        <input type="number" name="income" step="0.01" min="0" required inputmode="decimal" />
+      </div>
+      <div class="form-group">
+        <label>📝 แหล่งรายได้</label>
+        <input type="text" name="source" required placeholder="ระบุแหล่งรายได้" />
       </div>
       <button type="submit" class="btn-submit">✅ บันทึกรายรับ</button>
     </form>
     <nav class="menu-links">
       <a href="index.html" class="btn-nav btn-blue">🏠 Home</a>
-      <a href="expense.html" class="btn-nav btn-yellow">🧾 Expense</a>
+      <a href="form_bill.html" class="btn-nav btn-yellow">🧾 Expense</a>
       <a href="dashboard.html" class="btn-nav btn-purple">📊 Dashboard</a>
     </nav>
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxHoPVZu7QzSb-jHx4ssVRzZqSHO9ZoSTaXS1YcRAc1DxMPF4Y1oV8pUkbMQJHgUjy7/exec';
+    // เปลี่ยน URL ไปยัง Apps Script ที่ใช้งานจริง
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
 
     function jsonp(url, params, cbName) {
       return new Promise((resolve, reject) => {
@@ -129,7 +131,8 @@
     document.getElementById('incomeForm').addEventListener('submit', async e => {
       e.preventDefault();
       const date = e.target.date.value;
-      const amount = e.target.amount.value;
+      const income = e.target.income.value;
+      const source = e.target.source.value;
 
       Swal.fire({
         title: 'กำลังบันทึกรายรับ...',
@@ -139,8 +142,18 @@
 
       try {
         const cbName = 'cb' + Date.now();
-        const resp = await jsonp(scriptURL, { date, amount }, cbName);
-        if (resp.status === 'success') {
+        // ส่งข้อมูลในรูปแบบที่เหมาะกับ Apps Script (incomelog: วันที่, ยอดขาย, แหล่งรายได้)
+        const data = [{
+          date: date,
+          income: income,
+          source: source
+        }];
+        const params = {
+          sheet: "incomelog",
+          data: JSON.stringify(data)
+        };
+        const resp = await jsonp(scriptURL, params, cbName);
+        if (resp.result === 'success') {
           Swal.fire('สำเร็จ','บันทึกรายรับเรียบร้อย','success')
             .then(() => location.href = 'index.html');
         } else {
