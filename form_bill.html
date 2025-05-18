@@ -117,6 +117,54 @@
     </div>
   </div>
   <script>
+    // --- Marketlist ---
+    let marketlist = [];
+    let marketlistNames = [];
+
+    function fetchMarketlist() {
+      // ดึง marketlist จาก Google Sheets ผ่าน Apps Script (JSONP)
+      return new Promise((resolve, reject) => {
+        const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=marketlist';
+        const callbackName = 'marketlist_cb_' + Math.random().toString(36).substring(2);
+        window[callbackName] = function(response) {
+          if (response && response.result === 'success') {
+            marketlist = response.data || [];
+            marketlistNames = marketlist.map(item => item.name).filter(Boolean);
+            updateProductDatalist();
+            resolve();
+          } else {
+            reject(response && response.message || 'ไม่สามารถโหลด Marketlist');
+          }
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+        const script = document.createElement('script');
+        script.src = url + `&callback=${callbackName}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    function updateProductDatalist() {
+      // อัปเดต datalist ของชื่อสินค้า
+      let datalist = document.getElementById('product-list');
+      if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'product-list';
+        document.body.appendChild(datalist);
+      }
+      datalist.innerHTML = '';
+      marketlistNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        datalist.appendChild(opt);
+      });
+      // ทุก input[name=name] ต้องอ้างอิง datalist นี้
+      document.querySelectorAll('input[name="name"]').forEach(input => {
+        input.setAttribute('list', 'product-list');
+      });
+    }
+
+    // --- Form ---
     let itemIndex = 0;
     function itemTemplate(idx) {
       return `
@@ -126,14 +174,7 @@
         </div>
         <div class="single-row">
           <div class="col">
-            <input list="product-list" name="name" required placeholder="ชื่อสินค้า">
-            <datalist id="product-list">
-              <option value="นมกล่อง">
-              <option value="ข้าวสาร">
-              <option value="น้ำดื่ม">
-              <option value="ไข่ไก่">
-              <option value="อื่น ๆ">
-            </datalist>
+            <input list="product-list" name="name" required placeholder="ชื่อสินค้า" autocomplete="off">
           </div>
           <div class="col">
             <input list="group-list" name="group" required placeholder="หมวดหมู่สินค้า">
@@ -164,18 +205,42 @@
       </div>
       `;
     }
+
     function addItem(values = {}) {
       const idx = itemIndex++;
       const div = document.createElement('div');
       div.innerHTML = itemTemplate(idx);
+      const el = div.firstElementChild;
       // Pre-fill
       Object.entries(values).forEach(([k, v]) => {
-        const input = div.querySelector(`[name=${k}]`);
+        const input = el.querySelector(`[name=${k}]`);
         if (input) input.value = v;
       });
-      document.getElementById('items-list').appendChild(div.firstElementChild);
+      // Autofill จาก marketlist เมื่อเปลี่ยนชื่อสินค้า
+      const nameInput = el.querySelector('input[name="name"]');
+      if (nameInput) {
+        nameInput.addEventListener('change', function() {
+          autofillFromMarketlist(this, el);
+        });
+      }
+      // อัปเดต datalist สำหรับ input นี้
+      nameInput.setAttribute('list', 'product-list');
+      document.getElementById('items-list').appendChild(el);
       updateItemHeaders();
     }
+
+    function autofillFromMarketlist(input, section) {
+      const val = input.value.trim();
+      const found = marketlist.find(item => item.name === val);
+      if (found) {
+        if (section.querySelector('[name=group]')) section.querySelector('[name=group]').value = found.group || "";
+        if (section.querySelector('[name=unit]')) section.querySelector('[name=unit]').value = found.unit || "";
+        if (section.querySelector('[name=in_unit]')) section.querySelector('[name=in_unit]').value = found.in_unit || "";
+        if (section.querySelector('[name=sec_unit]')) section.querySelector('[name=sec_unit]').value = found.sec_unit || "";
+        // หมายเหตุ: ไม่เติม remarks, price_unit เพราะแต่ละบิลอาจไม่เหมือนเดิม
+      }
+    }
+
     function removeItem(idx) {
       const item = document.querySelector(`.item-section[data-idx="${idx}"]`);
       if (item) item.remove();
@@ -188,8 +253,15 @@
         el.setAttribute('data-idx', i);
       });
       itemIndex = items.length;
+      updateProductDatalist();
     }
-    document.addEventListener('DOMContentLoaded', () => {
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await fetchMarketlist();
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', err, 'error');
+      }
       addItem();
       document.getElementById('billForm').addEventListener('submit', submitForm);
     });
@@ -240,6 +312,7 @@
           document.getElementById('billForm').reset();
           document.getElementById('items-list').innerHTML = '';
           addItem();
+          updateProductDatalist();
         } else {
           Swal.fire('ผิดพลาด', response && response.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
         }
