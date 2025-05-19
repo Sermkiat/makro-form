@@ -8,7 +8,7 @@
   <style>
     html {
       box-sizing: border-box;
-      font-size: 12px; /* แก้ตรงนี้ */
+      font-size: 14px; /* แก้ตรงนี้ */
       background: #97b6eb;
       /* ให้ scrollbar ดูเนียนขึ้นบน iOS */
       -webkit-tap-highlight-color: transparent;
@@ -75,6 +75,7 @@
       appearance: none;
       transition: border 0.2s, background 0.2s;
       outline: none;
+      height: 40px; /* Added to set equal height */
     }
     input:focus, select:focus {
       border: 2px solid #68aaff;
@@ -313,6 +314,7 @@
            margin-bottom: 0; /* ลบ margin ด้านล่างของ input/select */
            padding: 0.5em 0.8em; /* ปรับ padding ให้กระชับขึ้น */
            font-size: 0.95em; /* ปรับขนาดฟอนต์ */
+           height: 35px; /* Adjusted height for smaller screens */
        }
 
       /* ปรับความกว้างของ columns ใน single-row สำหรับหน้าจอเล็ก */
