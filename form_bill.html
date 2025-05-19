@@ -3,11 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>บันทึกบิล/รายจ่าย</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    body { background: #77aaff; font-family: 'Kanit', sans-serif; margin: 0; }
+    html, body {
+      height: 100%;
+    }
+    body {
+      background: #77aaff;
+      font-family: 'Kanit', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      /* รองรับ safe area ของ iPhone */
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
     .container {
       background: #fff;
       max-width: 420px;
@@ -15,16 +25,47 @@
       border-radius: 18px;
       box-shadow: 0 4px 24px #0002;
       padding: 22px 12px 16px 12px;
+      box-sizing: border-box;
+      width: 100%;
     }
-    h2 { text-align: center; margin: 0; }
-    .divider { border-top: 3px solid #b3e0ff; margin: 12px 0; }
-    .row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .col { flex: 1; }
-    label { font-weight: bold; display: block; margin-bottom: 3px; }
+    h2 {
+      text-align: center;
+      margin: 0;
+      font-size: 1.4em;
+    }
+    .divider {
+      border-top: 3px solid #b3e0ff;
+      margin: 12px 0;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .col {
+      flex: 1;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 3px;
+      font-size: 1em;
+    }
     input, select, datalist {
-      width: 100%; padding: 7px 10px; font-size: 1em;
-      border-radius: 8px; border: 1px solid #d5d5d5; background: #f4f8fb;
-      box-sizing: border-box; margin-bottom: 3px;
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: 1px solid #d5d5d5;
+      background: #f4f8fb;
+      box-sizing: border-box;
+      margin-bottom: 3px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input[type=date] {
+      font-size: 1em;
     }
     .item-section {
       background: #eaf6ff;
@@ -34,19 +75,30 @@
       position: relative;
     }
     .item-header {
-      font-weight: bold; font-size: 1.05em; margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 1.05em;
+      margin-bottom: 6px;
     }
     .remove-btn {
-      position: absolute; top: 11px; right: 11px;
-      background: #e74c3c; color: #fff; border: none;
-      border-radius: 7px; padding: 3px 12px; font-size: 0.98em; cursor: pointer;
+      position: absolute;
+      top: 11px;
+      right: 11px;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 3px 12px;
+      font-size: 0.98em;
+      cursor: pointer;
     }
     .actions {
-      display: flex; gap: 10px; margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
     }
     .btn {
       flex: 1;
-      padding: 10px 0;
+      padding: 12px 0;
       font-size: 1.06em;
       border-radius: 9px;
       border: none;
@@ -54,17 +106,29 @@
       font-weight: bold;
       transition: background 0.2s;
     }
-    .btn-add { background: #ffe066; color: #444; }
-    .btn-save { background: #328ef5; color: #fff; }
-    .single-row { display: flex; gap: 7px; margin-bottom: 7px;}
-    .single-row .col { margin-bottom: 0; }
-    .single-row input, .single-row select { margin-bottom: 0; }
-    @media (max-width: 430px) {
-      .container { max-width: 100vw; }
-      .single-row { flex-direction: column; gap: 0; }
+    .btn-add {
+      background: #ffe066;
+      color: #444;
     }
-    /* Receipt-style popup */
-    .swal2-title { font-weight: bold !important; }
+    .btn-save {
+      background: #328ef5;
+      color: #fff;
+    }
+    .single-row {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+    .single-row .col {
+      margin-bottom: 0;
+    }
+    .single-row input, .single-row select {
+      margin-bottom: 0;
+    }
+    /* Popup */
+    .swal2-title {
+      font-weight: bold !important;
+    }
     .receipt-confirm {
       font-family: 'Kanit', monospace !important;
       font-size: 1.08em;
@@ -133,12 +197,16 @@
       text-align: center;
       margin-top: 10px;
     }
-    /* Navigation buttons - standard for all pages */
+    /* Navigation buttons */
     .bottom-nav {
       display: flex;
       gap: 10px;
       margin-top: 22px;
       justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
+      /* รองรับ safe area ด้านล่าง */
+      padding-bottom: env(safe-area-inset-bottom, 0);
     }
     .menu-links {
       width: 100%;
@@ -169,10 +237,53 @@
     .nav-income    { background: #38b16c; border: 2.5px solid #289259; }
     .nav-expense   { background: #ffc940; color: #222; border: 2.5px solid #d3ab2b; }
     .nav-dashboard { background: #904be2; border: 2.5px solid #7a36c2; }
-    .nav-btn:active, .nav-btn:focus { filter: brightness(0.92); box-shadow: 0 2px 6px #0002; }
+    .nav-btn:active, .nav-btn:focus {
+      filter: brightness(0.92);
+      box-shadow: 0 2px 6px #0002;
+    }
+    /* Responsive สำหรับ iPhone */
+    @media (max-width: 520px) {
+      .container {
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 14px 4px 10px 4px;
+        max-width: 100vw;
+        border-radius: 12px;
+      }
+      h2 {
+        font-size: 1.15em;
+      }
+      .row {
+        flex-direction: column;
+        gap: 5px;
+      }
+      .single-row {
+        flex-direction: column;
+        gap: 0;
+      }
+      .item-section {
+        padding: 8px;
+      }
+      .btn {
+        font-size: 1em;
+        padding: 9px 0;
+      }
+      .actions {
+        gap: 6px;
+      }
+    }
     @media (max-width: 430px) {
+      .container {
+        max-width: 100vw;
+        padding-left: 1vw;
+        padding-right: 1vw;
+      }
       .menu-links { gap: 5px; }
       .nav-btn { padding: 14px 0 10px 0; font-size: 1em; }
+    }
+    @media (max-width: 370px) {
+      .container { padding-left: 0; padding-right: 0; }
+      .nav-btn { font-size: 0.95em; }
     }
   </style>
 </head>
