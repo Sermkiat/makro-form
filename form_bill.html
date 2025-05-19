@@ -18,7 +18,7 @@
     }
     body {
       min-height: 100vh;
-      margin: 4;
+      margin: 0;
       font-family: 'Kanit', Arial, sans-serif;
       display: flex;
       justify-content: center;
@@ -153,6 +153,7 @@
       display: flex;
       gap: 8px;
       margin-bottom: 7px;
+      /* Default is row for larger screens */
     }
     .single-row .col {
       margin-bottom: 0;
@@ -297,17 +298,37 @@
       button, .btn, .nav-btn {
         font-size: 0.95em; /* ปรับขนาดตัวอักษรของปุ่ม */
       }
+      /* แก้ไข: ทำให้ input fields ใน single-row อยู่บรรทัดเดียวกันบนหน้าจอเล็ก */
       .single-row {
-        flex-direction: column; /* ในหน้าจอเล็กให้เรียง input ในแนวตั้ง */
-        gap: 0; /* ลบ gap เมื่อเรียงแนวตั้ง */
+        flex-direction: row; /* เปลี่ยนเป็น row เพื่อให้อยู่บรรทัดเดียวกัน */
+        gap: 5px; /* ปรับ gap ให้กระชับขึ้น */
+        margin-bottom: 5px; /* ปรับ margin ด้านล่าง */
       }
       .single-row .col {
-        width: 100%; /* ทำให้ input ใช้ความกว้างเต็ม */
-        margin-bottom: 0.7em; /* เพิ่ม margin ด้านล่างให้ input */
+        width: auto; /* ให้ความกว้างปรับตามเนื้อหาหรือ flex */
+        margin-bottom: 0; /* ลบ margin ด้านล่าง */
       }
-       .single-row .col:last-child {
-        margin-bottom: 0; /* ลบ margin ด้านล่างของ input ตัวสุดท้ายใน row */
-      }
+       .single-row .col input,
+       .single-row .col select {
+           margin-bottom: 0; /* ลบ margin ด้านล่างของ input/select */
+           padding: 0.5em 0.8em; /* ปรับ padding ให้กระชับขึ้น */
+           font-size: 0.95em; /* ปรับขนาดฟอนต์ */
+       }
+
+      /* ปรับความกว้างของ columns ใน single-row สำหรับหน้าจอเล็ก */
+      .item-section .single-row:nth-of-type(1) .col:nth-child(1) { flex: 2; } /* ชื่อสินค้า กว้างกว่า */
+      .item-section .single-row:nth-of-type(1) .col:nth-child(2) { flex: 1; } /* หมวดหมู่สินค้า */
+
+      .item-section .single-row:nth-of-type(2) .col:nth-child(1) { flex: 1.2; } /* จำนวน */
+      .item-section .single-row:nth-of-type(2) .col:nth-child(2) { flex: 1; } /* หน่วย */
+      .item-section .single-row:nth-of-type(2) .col:nth-child(3) { flex: 1.5; } /* ราคาต่อหน่วย */
+      .item-section .single-row:nth-of-type(2) .col:nth-child(4) { flex: 1.5; } /* รวม */
+
+      .item-section .single-row:nth-of-type(3) .col:nth-child(1) { flex: 1; } /* หน่วยย่อย */
+      .item-section .single-row:nth-of-type(3) .col:nth-child(2) { flex: 1; } /* หน่วยในหน่วย */
+      .item-section .single-row:nth-of-type(3) .col:nth-child(3) { flex: 2; } /* หมายเหตุ กว้างกว่า */
+
+
       .menu-links { gap: 6px; } /* ปรับ gap ของปุ่ม nav */
       .nav-btn { padding: 14px 0 10px 0; font-size: 1em; } /* ปรับ padding และขนาดตัวอักษรของปุ่ม nav */
     }
@@ -321,6 +342,18 @@
          .container {
              padding: 0.8em 0.5em; /* ปรับ padding เพิ่มเติม */
          }
+         /* ปรับความกว้างของ columns ใน single-row สำหรับหน้าจอที่เล็กมากๆ */
+         .item-section .single-row:nth-of-type(1) .col:nth-child(1) { flex: 2; } /* ชื่อสินค้า กว้างกว่า */
+         .item-section .single-row:nth-of-type(1) .col:nth-child(2) { flex: 1; } /* หมวดหมู่สินค้า */
+
+         .item-section .single-row:nth-of-type(2) .col:nth-child(1) { flex: 1.2; } /* จำนวน */
+         .item-section .single-row:nth-of-type(2) .col:nth-child(2) { flex: 1; } /* หน่วย */
+         .item-section .single-row:nth-of-type(2) .col:nth-child(3) { flex: 1.5; } /* ราคาต่อหน่วย */
+         .item-section .single-row:nth-of-type(2) .col:nth-child(4) { flex: 1.5; } /* รวม */
+
+         .item-section .single-row:nth-of-type(3) .col:nth-child(1) { flex: 1; } /* หน่วยย่อย */
+         .item-section .single-row:nth-of-type(3) .col:nth-child(2) { flex: 1; } /* หน่วยในหน่วย */
+         .item-section .single-row:nth-of-type(3) .col:nth-child(3) { flex: 2; } /* หมายเหตุ กว้างกว่า */
      }
   </style>
 </head>
