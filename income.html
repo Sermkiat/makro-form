@@ -116,8 +116,8 @@
       </div>
       <div class="form-group">
         <label>แหล่งรายรับ</label>
-        <input list="income-soure-list" name="soure" id="soure-input" required placeholder="เลือกหรือพิมพ์ เช่น ขายขนม"/>
-        <datalist id="income-soure-list">
+        <input list="income-source-list" name="source" id="source-input" required placeholder="เลือกหรือพิมพ์ เช่น ขายขนม"/>
+        <datalist id="income-source-list">
           <option value="ขายขนม">
           <option value="เทรด">
           <option value="อื่นๆ">
@@ -139,9 +139,9 @@
       const form = e.target;
       const date = form.date.value.trim();
       const income = form.income.value.trim();
-      const soure = form.soure.value.trim();
+      const source = form.source.value.trim();
 
-      if(!date || !income || !soure) {
+      if(!date || !income || !source) {
         Swal.fire('กรุณากรอกข้อมูลให้ครบถ้วน','','warning');
         return;
       }
@@ -149,7 +149,7 @@
       // Popup confirmation before submit
       const confirmResult = await Swal.fire({
         title: 'ยืนยันการบันทึก?',
-        html: `วันที่: <b>${date}</b><br>รายรับ: <b>${income}</b><br>แหล่งรายรับ: <b>${soure}</b>`,
+        html: `วันที่: <b>${date}</b><br>รายรับ: <b>${income}</b><br>แหล่งรายรับ: <b>${source}</b>`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'ใช่, บันทึกเลย',
@@ -161,7 +161,7 @@
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-      const data = { date, income, soure, sheet: 'incomelog' };
+      const data = { date, income, source: 'incomelog' };
       try {
         const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)), {method:'GET'});
         const resJson = await res.json();
