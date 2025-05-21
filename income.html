@@ -59,7 +59,6 @@
     .btn-submit:hover {
       background: #0f9b75;
     }
-    /* Navigation buttons - standard for all pages */
     .bottom-nav {
       display: flex;
       gap: 10px;
@@ -161,9 +160,9 @@
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-      const data = { date, income, source };
+      const data = { date, income, source }; // ส่งข้อมูลตามที่ user กรอก
       try {
-        const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)), {method:'GET'});
+        const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)) + '&sheet=incomelog', {method:'GET'});
         const resJson = await res.json();
         Swal.close();
         if(resJson.result === 'success') {
