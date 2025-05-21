@@ -161,7 +161,7 @@
       Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
       const url = 'https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec';
-      const data = { date, income, source: 'incomelog' };
+      const data = { date, income, source };
       try {
         const res = await fetch(url + '?data=' + encodeURIComponent(JSON.stringify(data)), {method:'GET'});
         const resJson = await res.json();
