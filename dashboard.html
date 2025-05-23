@@ -2,452 +2,330 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>แดชบอร์ดสรุปรายรับรายจ่าย</title>
-  <!-- Tailwind CDN -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Prompt', sans-serif; background: #f8fafc; }
-    /* Sticky bottom nav for mobile */
-    .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; }
+    body { font-family: 'Kanit', sans-serif; }
+    .sticky-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; }
     @media (min-width: 640px) {
-      .mobile-nav { position: static; }
+      .max-w-main { max-width: 520px; margin: 0 auto; }
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-20 sm:pb-0 flex flex-col">
+<body class="bg-gray-100 min-h-screen pb-28">
 
-  <!-- 1) Header + Period Selector -->
-  <section class="max-w-lg w-full mx-auto px-4 py-4">
-    <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-      📊 แดชบอร์ดสรุปรายรับรายจ่าย
-    </h1>
-    <div class="flex flex-wrap gap-2 sm:gap-4 items-center mb-2">
-      <label for="period-select" class="sr-only">เลือกช่วงข้อมูล</label>
-      <select id="period-select" class="rounded-lg border-gray-300 bg-white shadow-sm px-3 py-2 text-gray-700 focus:ring-blue-400">
-        <option value="today">วันนี้</option>
-        <option value="7">7 วันล่าสุด</option>
-        <option value="1">เดือนนี้</option>
-        <option value="prev1">เดือนที่แล้ว</option>
-        <option value="custom">เลือกเอง</option>
-      </select>
-      <input type="date" id="date-start" class="rounded border-gray-300 px-2 py-1 text-xs hidden" />
-      <span class="text-gray-500 text-xs hidden" id="date-range-sep">-</span>
-      <input type="date" id="date-end" class="rounded border-gray-300 px-2 py-1 text-xs hidden" />
+  <!-- 1) Header + Filter Section -->
+  <section class="bg-white shadow-md px-4 py-4 rounded-b-xl max-w-main mx-auto">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <h1 class="text-xl sm:text-2xl font-bold text-blue-700 tracking-tight">
+        📊 แดชบอร์ดสรุปรายรับรายจ่าย
+      </h1>
+      <div class="flex mt-2 gap-2">
+        <select id="range-select" class="rounded-xl border-gray-300 px-3 py-1 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-200">
+          <option value="today">วันนี้</option>
+          <option value="7d">7 วันล่าสุด</option>
+          <option value="month">เดือนนี้</option>
+          <option value="prevmonth">เดือนที่แล้ว</option>
+          <option value="custom">เลือกเอง</option>
+        </select>
+        <input type="date" id="date-from" class="hidden rounded-lg border px-2 py-1 text-xs" />
+        <input type="date" id="date-to" class="hidden rounded-lg border px-2 py-1 text-xs" />
+      </div>
     </div>
   </section>
 
   <!-- 2) Summary Totals -->
-  <section class="max-w-lg w-full mx-auto px-4">
-    <div class="flex flex-col sm:flex-row gap-3 w-full">
-      <div class="flex-1 bg-green-100 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
-        <span class="text-2xl">💰</span>
-        <div>
-          <div class="text-xs text-green-800 font-semibold">รายรับรวม</div>
-          <div class="text-lg font-bold text-green-700" id="total-income">-</div>
-        </div>
+  <section id="summary-totals" class="mt-4 flex flex-col sm:flex-row gap-3 max-w-main mx-auto">
+    <div class="flex-1 bg-green-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💰</span>
+      <div>
+        <div class="text-xs text-green-700">รายรับรวม</div>
+        <div class="text-xl font-semibold text-green-800" id="total-income">-</div>
       </div>
-      <div class="flex-1 bg-red-100 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
-        <span class="text-2xl">💸</span>
-        <div>
-          <div class="text-xs text-red-800 font-semibold">รายจ่ายรวม</div>
-          <div class="text-lg font-bold text-red-700" id="total-expense">-</div>
-        </div>
+    </div>
+    <div class="flex-1 bg-red-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💸</span>
+      <div>
+        <div class="text-xs text-red-700">รายจ่ายรวม</div>
+        <div class="text-xl font-semibold text-red-800" id="total-expense">-</div>
       </div>
-      <div class="flex-1 bg-blue-100 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
-        <span class="text-2xl">💵</span>
-        <div>
-          <div class="text-xs text-blue-800 font-semibold">คงเหลือสุทธิ</div>
-          <div class="text-lg font-bold text-blue-700" id="net-balance">-</div>
-        </div>
+    </div>
+    <div class="flex-1 bg-blue-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💵</span>
+      <div>
+        <div class="text-xs text-blue-700">คงเหลือสุทธิ</div>
+        <div class="text-xl font-semibold text-blue-800" id="total-balance">-</div>
       </div>
     </div>
   </section>
 
-  <!-- 3) Visualization Section -->
-  <section class="max-w-lg w-full mx-auto px-4 py-4 flex flex-col gap-6">
-    <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-1 flex items-center gap-2">📈 กราฟรายวัน</h2>
-      <canvas id="chart-daily" height="160"></canvas>
+  <!-- 3) Visualization Charts -->
+  <section class="mt-5 max-w-main mx-auto">
+    <!-- Line Chart: Daily Income vs Expense -->
+    <div class="bg-white shadow-md rounded-xl px-4 py-4 mb-4">
+      <h2 class="text-base font-semibold mb-2 text-gray-800">📈 รายรับ-รายจ่ายรายวัน</h2>
+      <canvas id="lineChart" height="140"></canvas>
     </div>
-    <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-1 flex items-center gap-2">📊 กราฟรายเดือน</h2>
-      <canvas id="chart-monthly" height="140"></canvas>
+    <!-- Bar Chart: Monthly Summary -->
+    <div class="bg-white shadow-md rounded-xl px-4 py-4 mb-4">
+      <h2 class="text-base font-semibold mb-2 text-gray-800">📊 ยอดรวมรายเดือน</h2>
+      <canvas id="barChart" height="120"></canvas>
     </div>
-    <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-1 flex items-center gap-2">🍩 หมวดหมู่ค่าใช้จ่าย</h2>
-      <canvas id="chart-category" height="120"></canvas>
+    <!-- Donut Chart: Expense by Category -->
+    <div class="bg-white shadow-md rounded-xl px-4 py-4">
+      <h2 class="text-base font-semibold mb-2 text-gray-800">🍩 ค่าใช้จ่ายตามหมวด</h2>
+      <canvas id="doughnutChart" height="120"></canvas>
     </div>
   </section>
 
-  <!-- 4) Summary by Category -->
-  <section class="max-w-lg w-full mx-auto px-4 py-2">
-    <div class="bg-white rounded-xl shadow-md px-2 py-2 mb-2">
-      <h3 class="text-base font-bold text-gray-700 mb-2">สรุปตามหมวดหมู่</h3>
+  <!-- 4) Category Table -->
+  <section class="mt-5 max-w-main mx-auto">
+    <div class="bg-white shadow-md rounded-xl px-4 py-4">
+      <h2 class="text-base font-semibold mb-3 text-gray-800">สรุปตามหมวดหมู่</h2>
       <div class="overflow-x-auto">
-        <table class="min-w-full text-xs bg-gray-50 rounded">
+        <table class="min-w-full text-xs border bg-gray-50 rounded">
           <thead>
-            <tr class="bg-gray-100 text-gray-600">
-              <th class="px-2 py-1 font-semibold rounded-tl">หมวด</th>
-              <th class="px-2 py-1 font-semibold">จำนวน</th>
-              <th class="px-2 py-1 font-semibold">รวม</th>
-              <th class="px-2 py-1 font-semibold rounded-tr">%</th>
+            <tr class="text-gray-700 bg-gray-100">
+              <th class="px-2 py-1 text-left rounded-tl">หมวด</th>
+              <th class="px-2 py-1 text-right">จำนวน</th>
+              <th class="px-2 py-1 text-right">รวม</th>
+              <th class="px-2 py-1 text-right rounded-tr">%</th>
             </tr>
           </thead>
-          <tbody id="category-summary">
-            <!-- Dynamic rows -->
+          <tbody id="category-table">
+            <!-- JS-generated rows -->
           </tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <!-- 5) Top 5 รายการ -->
-  <section class="max-w-lg w-full mx-auto px-4 py-2 flex flex-col gap-2">
-    <div class="bg-white rounded-xl shadow-md px-2 py-2">
-      <h3 class="text-base font-bold text-gray-700 mb-2">Top 5 รายจ่าย</h3>
-      <div id="top5-expense" class="flex flex-col gap-2">
-        <!-- Dynamic list -->
-      </div>
+  <!-- 5) Top 5 Items -->
+  <section class="mt-5 max-w-main mx-auto flex flex-col sm:flex-row gap-4">
+    <div class="flex-1 bg-white shadow-md rounded-xl px-4 py-4">
+      <h2 class="text-base font-semibold mb-2 text-gray-800">Top 5 รายจ่าย</h2>
+      <ul id="top-expense-list" class="divide-y text-sm">
+        <!-- JS-generated -->
+      </ul>
     </div>
-    <div class="bg-white rounded-xl shadow-md px-2 py-2">
-      <h3 class="text-base font-bold text-gray-700 mb-2">Top 5 รายรับ</h3>
-      <div id="top5-income" class="flex flex-col gap-2">
-        <!-- Dynamic list -->
-      </div>
+    <div class="flex-1 bg-white shadow-md rounded-xl px-4 py-4">
+      <h2 class="text-base font-semibold mb-2 text-gray-800">Top 5 รายรับ</h2>
+      <ul id="top-income-list" class="divide-y text-sm">
+        <!-- JS-generated -->
+      </ul>
     </div>
   </section>
 
   <!-- 7) Google Sheet Link -->
-  <section class="max-w-lg w-full mx-auto px-4 pt-3 pb-6 flex justify-center">
-    <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing"
-      class="text-blue-600 underline text-sm hover:text-blue-800 font-medium"
-      target="_blank" rel="noopener noreferrer">ดูข้อมูลใน Google Sheet</a>
+  <section class="mt-6 mb-32 max-w-main mx-auto flex justify-center">
+    <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing" 
+      target="_blank"
+      class="block bg-blue-100 hover:bg-blue-200 text-blue-700 text-center rounded-full px-5 py-2 font-semibold transition">
+      ดูข้อมูลใน Google Sheet
+    </a>
   </section>
 
-  <!-- 6) Navigation Buttons (Bottom bar) -->
-  <nav class="mobile-nav bg-white max-w-lg mx-auto shadow-lg rounded-t-xl flex justify-between px-2 py-1 sm:relative sm:rounded-xl">
-    <a href="/dashboard.html" class="flex-1 flex flex-col items-center py-2 text-blue-600 hover:bg-blue-50 rounded-xl transition">
+  <!-- 6) Bottom Navigation -->
+  <nav class="sticky-nav bg-white border-t shadow-md flex justify-between px-2 py-1 sm:max-w-main sm:mx-auto">
+    <a href="index.html" class="flex-1 flex flex-col items-center py-2 rounded-xl transition hover:bg-blue-50">
       <span class="text-2xl">🏠</span>
-      <span class="text-xs font-medium pt-1">Home</span>
+      <span class="text-xs font-semibold mt-0.5">Home</span>
     </a>
-    <a href="/income.html" class="flex-1 flex flex-col items-center py-2 text-green-600 hover:bg-green-50 rounded-xl transition">
+    <a href="income.html" class="flex-1 flex flex-col items-center py-2 rounded-xl transition hover:bg-green-50">
       <span class="text-2xl">💰</span>
-      <span class="text-xs font-medium pt-1">Income</span>
+      <span class="text-xs font-semibold mt-0.5">Income</span>
     </a>
-    <a href="/expense.html" class="flex-1 flex flex-col items-center py-2 text-red-600 hover:bg-red-50 rounded-xl transition">
+    <a href="expense.html" class="flex-1 flex flex-col items-center py-2 rounded-xl transition hover:bg-red-50">
       <span class="text-2xl">💸</span>
-      <span class="text-xs font-medium pt-1">Expense</span>
+      <span class="text-xs font-semibold mt-0.5">Expense</span>
     </a>
   </nav>
 
-  <!-- JS for API and Chart rendering -->
   <script>
-    // ----- Config -----
+    // --- CONFIG ---
     const API_URL = "https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec";
-    // ----- State -----
-    let dashboardData = {};
-    let summaryData = {};
-    let period = "1"; // default: เดือนนี้
 
-    // ----- Elements -----
-    const periodSelect = document.getElementById('period-select');
-    const dateStart = document.getElementById('date-start');
-    const dateEnd = document.getElementById('date-end');
-    const dateSep = document.getElementById('date-range-sep');
+    // --- STATE ---
+    let selectedRange = 'month';
+    let customFrom = '';
+    let customTo = '';
 
-    // ----- Helpers -----
-    function formatNumber(num) {
-      num = Number(num) || 0;
-      return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    function updateSummaryTotals(data) {
-      document.getElementById('total-income').textContent = formatNumber(data.income || 0) + " ฿";
-      document.getElementById('total-expense').textContent = formatNumber(data.expense || 0) + " ฿";
-      document.getElementById('net-balance').textContent = formatNumber((data.income || 0) - (data.expense || 0) ) + " ฿";
-    }
-    function showCustomDatePicker(show) {
-      dateStart.classList.toggle('hidden', !show);
-      dateEnd.classList.toggle('hidden', !show);
-      dateSep.classList.toggle('hidden', !show);
-    }
-
-    // ----- Fetch API -----
-    async function fetchSummary() {
-      try {
-        const res = await fetch(API_URL + "?action=summary");
-        const data = await res.json();
-        summaryData = data;
-        updateSummaryTotals(data);
-      } catch (e) {
-        updateSummaryTotals({ income: 0, expense: 0 });
-      }
-    }
-    async function fetchDashboard(periodParam = "1", customStart, customEnd) {
-      let url = API_URL + "?action=dashboard";
-      if (periodParam === "today") {
-        // today, set filter for today
-        const today = new Date().toISOString().slice(0,10);
-        url += `&start=${today}&end=${today}`;
-      } else if (periodParam === "7") {
-        // 7 days
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 6);
-        url += `&start=${start.toISOString().slice(0,10)}&end=${end.toISOString().slice(0,10)}`;
-      } else if (periodParam === "prev1") {
-        // previous month
-        const now = new Date();
-        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const start = prevMonth.toISOString().slice(0,10);
-        const end = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0).toISOString().slice(0,10);
-        url += `&start=${start}&end=${end}`;
-      } else if (periodParam === "custom" && customStart && customEnd) {
-        url += `&start=${customStart}&end=${customEnd}`;
+    // --- HANDLERS ---
+    document.getElementById('range-select').addEventListener('change', function(e){
+      selectedRange = this.value;
+      if(selectedRange === 'custom') {
+        document.getElementById('date-from').classList.remove('hidden');
+        document.getElementById('date-to').classList.remove('hidden');
       } else {
-        // default: month=1 (this month)
-        url += "&month=1";
+        document.getElementById('date-from').classList.add('hidden');
+        document.getElementById('date-to').classList.add('hidden');
+        fetchAndRenderAll();
       }
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        dashboardData = data;
-        renderCharts(data);
-        renderCategorySummary(data);
-        renderTop5(data);
-      } catch (e) {
-        renderCharts({});
-        renderCategorySummary({});
-        renderTop5({});
-      }
+    });
+    document.getElementById('date-from').addEventListener('change', function(e){
+      customFrom = this.value;
+      if(customFrom && customTo) fetchAndRenderAll();
+    });
+    document.getElementById('date-to').addEventListener('change', function(e){
+      customTo = this.value;
+      if(customFrom && customTo) fetchAndRenderAll();
+    });
+
+    // --- API FETCH ---
+    async function fetchSummary() {
+      const url = API_URL + "?action=summary";
+      const res = await fetch(url);
+      return res.json();
+    }
+    async function fetchDashboard() {
+      let url = API_URL + "?action=dashboard";
+      if(selectedRange === "today") url += "&range=today";
+      else if(selectedRange === "7d") url += "&range=7d";
+      else if(selectedRange === "month") url += "&month=1";
+      else if(selectedRange === "prevmonth") url += "&month=2";
+      else if(selectedRange === "custom" && customFrom && customTo)
+        url += `&from=${customFrom}&to=${customTo}`;
+      const res = await fetch(url);
+      return res.json();
     }
 
-    // ----- Chart.js -----
-    let chartDaily, chartMonthly, chartCategory;
+    // --- CHART instance holders ---
+    let lineChart, barChart, doughnutChart;
+
+    // --- RENDERERS ---
+    async function fetchAndRenderAll() {
+      // 1. Summary
+      fetchSummary().then(renderSummaryTotals);
+
+      // 2. Dashboard
+      fetchDashboard().then(data => {
+        // Visualization
+        renderCharts(data);
+        // Category Table
+        renderCategoryTable(data);
+        // Top 5 lists
+        renderTop5(data);
+      });
+    }
+
+    function renderSummaryTotals(summary) {
+      document.getElementById('total-income').textContent = summary?.income?.toLocaleString('th-TH') || '-';
+      document.getElementById('total-expense').textContent = summary?.expense?.toLocaleString('th-TH') || '-';
+      document.getElementById('total-balance').textContent = summary?.balance?.toLocaleString('th-TH') || '-';
+    }
 
     function renderCharts(data) {
-      // Data structure depends on your API response!
-      // 1. Daily Line: each day sum income/expense
-      // 2. Monthly Bar: each month sum income/expense
-      // 3. Category Pie: group by expense category
+      // Daily line chart
+      const days = data.daily?.map(d=>d.date) || [];
+      const incomeDaily = data.daily?.map(d=>d.income||0) || [];
+      const expenseDaily = data.daily?.map(d=>d.expense||0) || [];
 
-      // --- Daily Line Chart (income & expense) ---
-      let days = [], incomeArr = [], expenseArr = [];
-      if (data.daily) {
-        days = data.daily.map(d => d.date);
-        incomeArr = data.daily.map(d => d.income || 0);
-        expenseArr = data.daily.map(d => d.expense || 0);
-      }
-      if (!chartDaily) {
-        const ctx = document.getElementById('chart-daily').getContext('2d');
-        chartDaily = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: days,
-            datasets: [
-              {
-                label: 'รายรับ',
-                data: incomeArr,
-                fill: false,
-                borderColor: "#22c55e",
-                tension: 0.2,
-                backgroundColor: "#22c55e",
-              },
-              {
-                label: 'รายจ่าย',
-                data: expenseArr,
-                fill: false,
-                borderColor: "#ef4444",
-                tension: 0.2,
-                backgroundColor: "#ef4444",
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: true } },
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
-      } else {
-        chartDaily.data.labels = days;
-        chartDaily.data.datasets[0].data = incomeArr;
-        chartDaily.data.datasets[1].data = expenseArr;
-        chartDaily.update();
-      }
-
-      // --- Monthly Bar Chart ---
-      let months = [], mIncome = [], mExpense = [];
-      if (data.monthly) {
-        months = data.monthly.map(m => m.month);
-        mIncome = data.monthly.map(m => m.income || 0);
-        mExpense = data.monthly.map(m => m.expense || 0);
-      }
-      if (!chartMonthly) {
-        const ctx = document.getElementById('chart-monthly').getContext('2d');
-        chartMonthly = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: months,
-            datasets: [
-              {
-                label: 'รายรับ',
-                data: mIncome,
-                backgroundColor: "#4ade80",
-              },
-              {
-                label: 'รายจ่าย',
-                data: mExpense,
-                backgroundColor: "#f87171",
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: true } },
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
-      } else {
-        chartMonthly.data.labels = months;
-        chartMonthly.data.datasets[0].data = mIncome;
-        chartMonthly.data.datasets[1].data = mExpense;
-        chartMonthly.update();
-      }
-
-      // --- Pie Chart by Category (Expense only) ---
-      let categories = [], catAmounts = [];
-      if (data.category && data.category.expense) {
-        categories = data.category.expense.map(c => c.name);
-        catAmounts = data.category.expense.map(c => c.total || 0);
-      }
-      if (!chartCategory) {
-        const ctx = document.getElementById('chart-category').getContext('2d');
-        chartCategory = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: categories,
-            datasets: [{
-              data: catAmounts,
-              backgroundColor: [
-                "#059669", "#3b82f6", "#f59e42", "#ef4444", "#a21caf",
-                "#fbbf24", "#64748b", "#e11d48", "#7c3aed"
-              ]
-            }]
-          },
-          options: {
-            responsive: true,
-            cutout: "65%",
-            plugins: {
-              legend: { display: true, position: 'bottom', labels: { font: { size: 11 } } }
-            }
-          }
-        });
-      } else {
-        chartCategory.data.labels = categories;
-        chartCategory.data.datasets[0].data = catAmounts;
-        chartCategory.update();
-      }
-    }
-
-    // ----- Category Table -----
-    function renderCategorySummary(data) {
-      const tb = document.getElementById('category-summary');
-      tb.innerHTML = '';
-      if (!data.category) return;
-      // Merge income & expense, mark type
-      let catRows = [];
-      if (data.category.income) {
-        data.category.income.forEach(c =>
-          catRows.push({ ...c, type: 'income' })
-        );
-      }
-      if (data.category.expense) {
-        data.category.expense.forEach(c =>
-          catRows.push({ ...c, type: 'expense' })
-        );
-      }
-      // Sort by total desc
-      catRows.sort((a, b) => (b.total||0) - (a.total||0));
-      // Calculate total sum for percent
-      const totalSum = catRows.reduce((s, r) => s + (r.total||0), 0) || 1;
-      for (const row of catRows) {
-        tb.innerHTML += `
-          <tr class="${row.type === 'income' ? 'text-green-700' : 'text-red-700'}">
-            <td class="px-2 py-1">${row.name || '-'}</td>
-            <td class="px-2 py-1 text-center">${row.count || 0}</td>
-            <td class="px-2 py-1 text-right">${formatNumber(row.total)}</td>
-            <td class="px-2 py-1 text-center">${((row.total/totalSum)*100).toFixed(1)}%</td>
-          </tr>
-        `;
-      }
-    }
-
-    // ----- Top 5 รายการ -----
-    function renderTop5(data) {
-      // Top 5 expense by name
-      const expDiv = document.getElementById('top5-expense');
-      expDiv.innerHTML = '';
-      if (data.top && data.top.expense) {
-        for (const e of data.top.expense.slice(0,5)) {
-          expDiv.innerHTML += `
-            <div class="flex items-center gap-2 bg-red-50 rounded px-2 py-1">
-              <span class="text-xl">🧾</span>
-              <span class="flex-1 truncate">${e.name || '-'}</span>
-              <span class="text-xs text-gray-500">${e.count || 0} ครั้ง</span>
-              <span class="font-semibold text-red-700">${formatNumber(e.total)}</span>
-            </div>
-          `;
-        }
-      }
-      // Top 5 income by source
-      const incDiv = document.getElementById('top5-income');
-      incDiv.innerHTML = '';
-      if (data.top && data.top.income) {
-        for (const i of data.top.income.slice(0,5)) {
-          incDiv.innerHTML += `
-            <div class="flex items-center gap-2 bg-green-50 rounded px-2 py-1">
-              <span class="text-xl">🪙</span>
-              <span class="flex-1 truncate">${i.source || '-'}</span>
-              <span class="text-xs text-gray-500">${i.count || 0} ครั้ง</span>
-              <span class="font-semibold text-green-700">${formatNumber(i.total)}</span>
-            </div>
-          `;
-        }
-      }
-    }
-
-    // ----- Period Selector Handler -----
-    periodSelect.addEventListener('change', function() {
-      const val = periodSelect.value;
-      if (val === 'custom') {
-        showCustomDatePicker(true);
-      } else {
-        showCustomDatePicker(false);
-        fetchDashboard(val);
-      }
-    });
-    [dateStart, dateEnd].forEach(el => {
-      el.addEventListener('change', () => {
-        if (dateStart.value && dateEnd.value) {
-          fetchDashboard('custom', dateStart.value, dateEnd.value);
-        }
+      if(lineChart) lineChart.destroy();
+      lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [
+            { label: 'รายรับ', data: incomeDaily, borderColor: "#4ade80", backgroundColor: "#bbf7d0", tension: 0.3, fill: false },
+            { label: 'รายจ่าย', data: expenseDaily, borderColor: "#f87171", backgroundColor: "#fecaca", tension: 0.3, fill: false }
+          ]
+        },
+        options: { responsive: true, plugins:{legend:{labels:{font:{family:'Kanit'}}}} }
       });
-    });
 
-    // ----- Init -----
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchSummary();
-      fetchDashboard('1');
-    });
+      // Bar chart: monthly
+      const months = data.monthly?.map(m=>m.month) || [];
+      const incomeMonthly = data.monthly?.map(m=>m.income||0) || [];
+      const expenseMonthly = data.monthly?.map(m=>m.expense||0) || [];
+      if(barChart) barChart.destroy();
+      barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'รับ', data: incomeMonthly, backgroundColor: "#22d3ee" },
+            { label: 'จ่าย', data: expenseMonthly, backgroundColor: "#f87171" }
+          ]
+        },
+        options: { responsive: true, plugins:{legend:{labels:{font:{family:'Kanit'}}}} }
+      });
+
+      // Doughnut chart: expense by category
+      const groups = data.expenseGroups || [];
+      const groupLabels = groups.map(g=>g.name);
+      const groupSums = groups.map(g=>g.sum);
+      if(doughnutChart) doughnutChart.destroy();
+      doughnutChart = new Chart(document.getElementById('doughnutChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: groupLabels,
+          datasets: [{ data: groupSums, backgroundColor: [
+            "#fbcfe8","#fcd34d","#6ee7b7","#a5b4fc","#fca5a5","#fdba74","#fef3c7","#bae6fd"
+          ] }],
+        },
+        options: { responsive: true, plugins:{legend:{position:'bottom',labels:{font:{family:'Kanit'}}}} }
+      });
+    }
+
+    function renderCategoryTable(data) {
+      const groups = [
+        ...(data.expenseGroups?.map(g=>({...g,type:'expense'}))||[]),
+        ...(data.incomeGroups?.map(g=>({...g,type:'income'}))||[])
+      ];
+      const totalExpense = data.expenseGroups?.reduce((s,g)=>s+g.sum,0)||1;
+      const totalIncome = data.incomeGroups?.reduce((s,g)=>s+g.sum,0)||1;
+      let html = '';
+      groups.forEach(g=>{
+        const percent = ((g.sum/(g.type==='expense'?totalExpense:totalIncome))*100).toFixed(1);
+        html += `<tr>
+          <td class="px-2 py-1">${g.type==='expense'?'💸':'💰'} ${g.name}</td>
+          <td class="px-2 py-1 text-right">${g.count}</td>
+          <td class="px-2 py-1 text-right">${g.sum.toLocaleString('th-TH')}</td>
+          <td class="px-2 py-1 text-right">${percent}%</td>
+        </tr>`
+      });
+      document.getElementById('category-table').innerHTML = html;
+    }
+
+    function renderTop5(data){
+      // Expense
+      let items = (data.expenseTop||[]).slice(0,5);
+      let expList = '';
+      items.forEach(i=>{
+        expList += `<li class="flex items-center gap-3 py-2">
+          <span class="text-lg">🧾</span>
+          <div class="flex-1">
+            <div class="font-medium">${i.name}</div>
+            <div class="text-xs text-gray-400">จำนวน ${i.count} | รวม <span class="text-red-600">${i.sum.toLocaleString('th-TH')}</span></div>
+          </div>
+        </li>`;
+      });
+      document.getElementById('top-expense-list').innerHTML = expList;
+
+      // Income
+      items = (data.incomeTop||[]).slice(0,5);
+      let incList = '';
+      items.forEach(i=>{
+        incList += `<li class="flex items-center gap-3 py-2">
+          <span class="text-lg">🪙</span>
+          <div class="flex-1">
+            <div class="font-medium">${i.source}</div>
+            <div class="text-xs text-gray-400">จำนวน ${i.count} | รวม <span class="text-green-600">${i.sum.toLocaleString('th-TH')}</span></div>
+          </div>
+        </li>`;
+      });
+      document.getElementById('top-income-list').innerHTML = incList;
+    }
+
+    // --- INIT ---
+    window.addEventListener('DOMContentLoaded', fetchAndRenderAll);
   </script>
 </body>
 </html>
