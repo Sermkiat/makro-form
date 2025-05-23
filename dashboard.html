@@ -1,90 +1,327 @@
-สร้างหน้าเว็บ `dashboard.html` โดยใช้ HTML + Tailwind CSS  
-รองรับการแสดงผลบน iPhone (Mobile-first) และเชื่อมต่อข้อมูลจาก Google Apps Script API ดังนี้:
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>แดชบอร์ดสรุปรายรับรายจ่าย</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Kanit', sans-serif; }
+    .bottom-nav-blur {
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 pb-28">
 
-📌 API URL:
-https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec
+  <!-- 1) Header + Filter -->
+  <section class="max-w-sm mx-auto px-4 py-4">
+    <div class="bg-white rounded-xl shadow-md px-4 py-3 flex flex-col gap-2">
+      <h1 class="text-lg font-bold tracking-tight text-blue-700">
+        📊 แดชบอร์ดสรุปรายรับรายจ่าย
+      </h1>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="today">วันนี้</button>
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="7d">7 วัน</button>
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="month">เดือนนี้</button>
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="1">ย้อนหลัง 1 เดือน</button>
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="2">ย้อนหลัง 2 เดือน</button>
+        <button class="period-btn bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold" data-period="3">ย้อนหลัง 3 เดือน</button>
+      </div>
+    </div>
+  </section>
 
-📊 เชื่อมกับแผนงาน Google Sheets:
-- `datalog` = รายจ่าย มีคอลัมน์: date_bill, supplier, name, unit, group, amount, price_unit, total, in_unit, sec_unit, remarks, records_time  
-- `incomelog` = รายรับ มีคอลัมน์: date, income, source
+  <!-- 2) Summary Cards -->
+  <section class="max-w-sm mx-auto px-4 py-2 flex flex-col sm:flex-row gap-3 mt-3">
+    <div class="flex-1 bg-green-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💰</span>
+      <div>
+        <div class="text-xs text-green-700">รายรับรวม</div>
+        <div class="text-xl font-semibold text-green-800" id="total-income">-</div>
+      </div>
+    </div>
+    <div class="flex-1 bg-red-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💸</span>
+      <div>
+        <div class="text-xs text-red-700">รายจ่ายรวม</div>
+        <div class="text-xl font-semibold text-red-800" id="total-expense">-</div>
+      </div>
+    </div>
+    <div class="flex-1 bg-blue-50 rounded-xl shadow-md px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl">💵</span>
+      <div>
+        <div class="text-xs text-blue-700">คงเหลือสุทธิ</div>
+        <div class="text-xl font-semibold text-blue-800" id="total-balance">-</div>
+      </div>
+    </div>
+  </section>
 
-🧠 ใช้ action ดังนี้:
-- `action=summary` → ใช้ในส่วนยอดรวมของเดือนนี้ / เดือนที่แล้ว
-- `action=dashboard&month=1` → ใช้ในกราฟ และรายการย้อนหลัง
-- `action=marketlist` → ไม่ใช้ใน dashboard แต่อาจใช้ในหน้าฟอร์มอื่น
+  <!-- 3) Charts -->
+  <section class="max-w-sm mx-auto px-4 mt-4 flex flex-col gap-4">
+    <div class="bg-white rounded-xl shadow-md px-2 py-3">
+      <div class="text-sm text-gray-700 font-semibold mb-2">📈 รายรับ-รายจ่ายรายวัน</div>
+      <canvas id="lineChart" class="w-full" height="180"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-md px-2 py-3">
+      <div class="text-sm text-gray-700 font-semibold mb-2">📊 เปรียบเทียบรายเดือน</div>
+      <canvas id="barChart" class="w-full" height="140"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-md px-2 py-3">
+      <div class="text-sm text-gray-700 font-semibold mb-2">🍩 สัดส่วนหมวดรายจ่าย</div>
+      <canvas id="doughnutChart" class="w-full" height="140"></canvas>
+    </div>
+  </section>
 
----
+  <!-- 4) หมวดหมู่รายจ่าย / รายรับ -->
+  <section class="max-w-sm mx-auto px-4 mt-4">
+    <div class="bg-white rounded-xl shadow-md px-4 py-3">
+      <div class="text-sm font-semibold text-gray-700 mb-2">สรุปยอดตามหมวด</div>
+      <div class="flex flex-col gap-2">
+        <table class="w-full text-xs rounded overflow-hidden">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600">
+              <th class="py-1 px-2 text-left">หมวด</th>
+              <th class="py-1 px-2 text-right">รับ/จ่าย</th>
+              <th class="py-1 px-2 text-right">%</th>
+            </tr>
+          </thead>
+          <tbody id="category-table">
+            <!-- JS insert -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
-🎯 องค์ประกอบ UI แบ่งเป็น 7 ส่วน
+  <!-- 5) Top 5 รายการ -->
+  <section class="max-w-sm mx-auto px-4 mt-4 flex flex-col sm:flex-row gap-3">
+    <div class="flex-1 bg-white rounded-xl shadow-md px-4 py-3 mb-2">
+      <div class="text-sm font-semibold text-gray-700 mb-2">Top 5 รายจ่าย</div>
+      <ul id="top-expense-list" class="divide-y text-sm">
+        <!-- JS insert -->
+      </ul>
+    </div>
+    <div class="flex-1 bg-white rounded-xl shadow-md px-4 py-3 mb-2">
+      <div class="text-sm font-semibold text-gray-700 mb-2">Top 5 รายรับ</div>
+      <ul id="top-income-list" class="divide-y text-sm">
+        <!-- JS insert -->
+      </ul>
+    </div>
+  </section>
 
-### 1) Header + เลือกช่วงข้อมูล
-- หัวข้อ: “แดชบอร์ดสรุปรายรับรายจ่าย”
-- มีปุ่มเลือกช่วงเวลา (วันนี้ / 7 วัน / เดือนนี้ / ย้อนหลัง 1-3 เดือน)
-- เมื่อเลือกช่วงใหม่ → โหลดข้อมูลใหม่จาก API `?action=dashboard&month=X`
+  <!-- 7) ลิงก์ดู Google Sheet -->
+  <section class="max-w-sm mx-auto px-4 mt-6 flex justify-center">
+    <a href="https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing"
+      target="_blank"
+      class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-center rounded-full px-5 py-2 font-semibold transition">
+      ดูข้อมูลใน Google Sheet
+    </a>
+  </section>
 
----
+  <!-- 6) Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-md border-t flex justify-between items-center max-w-sm mx-auto w-full bottom-nav-blur">
+    <a href="Index.html" class="flex-1 flex flex-col items-center gap-0.5 py-2 hover:bg-blue-50 transition">
+      <span class="text-2xl">🏠</span>
+      <span class="text-xs font-semibold">Home</span>
+    </a>
+    <a href="income.html" class="flex-1 flex flex-col items-center gap-0.5 py-2 hover:bg-green-50 transition">
+      <span class="text-2xl">💰</span>
+      <span class="text-xs font-semibold">Income</span>
+    </a>
+    <a href="expense.html" class="flex-1 flex flex-col items-center gap-0.5 py-2 hover:bg-red-50 transition">
+      <span class="text-2xl">💸</span>
+      <span class="text-xs font-semibold">Expense</span>
+    </a>
+  </nav>
 
-### 2) ยอดรวมสรุป (Summary)
-- กล่องข้อมูล 3 ใบ:
-  - 💰 รายรับรวม (พื้นเขียว)
-  - 💸 รายจ่ายรวม (พื้นแดง)
-  - 💵 คงเหลือสุทธิ (พื้นฟ้า)
-- ดึงข้อมูลจาก `action=summary`
-- Responsive: แนวตั้งบน iPhone, แนวนอนใน Desktop
+  <script>
+    // --- CONFIG ---
+    const API_URL = "https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec";
+    // --- PERIOD HANDLING ---
+    let currentPeriod = "month";  // default
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+        this.classList.add('bg-blue-600', 'text-white');
+        currentPeriod = this.dataset.period;
+        fetchAndRenderAll();
+      });
+    });
+    // Highlight default
+    document.querySelector(`.period-btn[data-period="${currentPeriod}"]`).classList.add('bg-blue-600', 'text-white');
 
----
+    // --- JSONP Utility ---
+    function fetchJSONP(url, callback) {
+      const cbName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+      window[cbName] = function(data) {
+        delete window[cbName];
+        document.body.removeChild(script);
+        callback(data);
+      };
+      const script = document.createElement('script');
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      document.body.appendChild(script);
+    }
 
-### 3) กราฟแสดงแนวโน้ม (Chart.js)
-- ใช้ `<canvas>` เพื่อแสดง:
-  - 📈 กราฟเส้น: รายรับ-รายจ่ายรายวัน
-  - 📊 กราฟแท่ง: เปรียบเทียบรายเดือน
-  - 🍩 กราฟวงกลม: แสดงสัดส่วนหมวดรายจ่าย
-- ดึงข้อมูลจาก `action=dashboard&month=X`
+    // --- CHARTS INSTANCE ---
+    let lineChart, barChart, doughnutChart;
 
----
+    // --- FETCH + RENDER ---
+    function fetchAndRenderAll() {
+      // 1. Summary
+      fetchJSONP(API_URL + "?action=summary", renderSummaryCards);
 
-### 4) หมวดหมู่รายจ่าย / รายรับ
-- สรุปยอดตาม `group` (จาก `datalog`) และ `source` (จาก `incomelog`)
-- ตารางหรือรายการแบบ responsive (หมวด | ยอดรวม | %)
+      // 2. Dashboard (period)
+      let dashUrl = API_URL + "?action=dashboard";
+      if (currentPeriod === 'today' || currentPeriod === '7d' || currentPeriod === 'month') {
+        if (currentPeriod === 'today') dashUrl += "&range=today";
+        else if (currentPeriod === '7d') dashUrl += "&range=7d";
+        else dashUrl += "&month=1";
+      } else if (["1", "2", "3"].includes(currentPeriod)) {
+        dashUrl += `&month=${currentPeriod}`;
+      }
+      fetchJSONP(dashUrl, renderDashboardAll);
+    }
 
----
+    // --- 2. Render Summary Cards ---
+    function renderSummaryCards(data) {
+      document.getElementById('total-income').textContent = data?.income?.toLocaleString('th-TH') || '-';
+      document.getElementById('total-expense').textContent = data?.expense?.toLocaleString('th-TH') || '-';
+      document.getElementById('total-balance').textContent = data?.balance?.toLocaleString('th-TH') || '-';
+    }
 
-### 5) Top 5 รายการ
-- 2 กล่องแสดง:
-  - รายจ่ายที่พบบ่อยสุด (จาก name ใน `datalog`)
-  - รายรับที่พบบ่อยสุด (จาก source ใน `incomelog`)
-- แต่ละรายการแสดง: ไอคอน, ชื่อ, จำนวนครั้ง, ยอดรวม
+    // --- 3/4/5. Render Dashboard Data ---
+    function renderDashboardAll(data) {
+      // 3) Charts
+      renderCharts(data);
+      // 4) Category Table
+      renderCategoryTable(data);
+      // 5) Top 5
+      renderTop5(data);
+    }
 
----
+    function renderCharts(data) {
+      // Line: Daily income/expense
+      const daily = data.daily || [];
+      const days = daily.map(d => d.date);
+      const incomeDaily = daily.map(d => d.income || 0);
+      const expenseDaily = daily.map(d => d.expense || 0);
 
-### 6) ปุ่มนำทาง (Navigation)
-- ปุ่มนำทาง 3 ปุ่มแบบอยู่ด้านล่าง (bottom nav bar):
-  - 🏠 Home → `/Index.html`
-  - 💰 Income → `/income.html`
-  - 💸 Expense → `/expense.html`
-- ใช้ Tailwind `flex`, `gap-4`, `text-sm`, `fixed bottom-0`, `bg-white shadow-md`
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [
+            { label: 'รายรับ', data: incomeDaily, borderColor: "#22c55e", backgroundColor: "#bbf7d0", tension: 0.3, fill: false },
+            { label: 'รายจ่าย', data: expenseDaily, borderColor: "#ef4444", backgroundColor: "#fecaca", tension: 0.3, fill: false }
+          ]
+        },
+        options: { responsive: true, plugins:{legend:{labels:{font:{family:'Kanit'}}}}, scales:{x:{ticks:{font:{family:'Kanit'}}},y:{ticks:{font:{family:'Kanit'}}}} }
+      });
 
----
+      // Bar: Monthly
+      const monthly = data.monthly || [];
+      const months = monthly.map(m => m.month);
+      const incomeMonthly = monthly.map(m => m.income || 0);
+      const expenseMonthly = monthly.map(m => m.expense || 0);
+      if (barChart) barChart.destroy();
+      barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'รับ', data: incomeMonthly, backgroundColor: "#38bdf8" },
+            { label: 'จ่าย', data: expenseMonthly, backgroundColor: "#f87171" }
+          ]
+        },
+        options: { responsive: true, plugins:{legend:{labels:{font:{family:'Kanit'}}}}, scales:{x:{ticks:{font:{family:'Kanit'}}},y:{ticks:{font:{family:'Kanit'}}}} }
+      });
 
-### 7) ลิงก์ดู Google Sheet
-- ลิงก์ใต้สุดของหน้า
-- ข้อความ: “ดูข้อมูลใน Google Sheet”
-- URL:  
-  [https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing](https://docs.google.com/spreadsheets/d/1bniIL-y285kEHvF_bzRRBOUYGrwcjwEaIrxWGIwh71s/edit?usp=sharing)  
-- เปิดในแท็บใหม่ (`target="_blank"`)
+      // Doughnut: Expense by group
+      const expenseGroups = data.expenseGroups || [];
+      const groupLabels = expenseGroups.map(g => g.name);
+      const groupSums = expenseGroups.map(g => g.sum);
+      if (doughnutChart) doughnutChart.destroy();
+      doughnutChart = new Chart(document.getElementById('doughnutChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: groupLabels,
+          datasets: [{
+            data: groupSums,
+            backgroundColor: [
+              "#fbcfe8","#fcd34d","#6ee7b7","#a5b4fc","#fca5a5","#fdba74","#fef3c7","#bae6fd","#f9a8d4","#facc15"
+            ]
+          }],
+        },
+        options: { responsive: true, plugins:{legend:{position:'bottom',labels:{font:{family:'Kanit'}}}} }
+      });
+    }
 
----
+    function renderCategoryTable(data) {
+      // Expense groups
+      const expenseGroups = data.expenseGroups || [];
+      const totalExpense = expenseGroups.reduce((sum, g) => sum + (g.sum || 0), 0) || 1;
+      // Income groups
+      const incomeGroups = data.incomeGroups || [];
+      const totalIncome = incomeGroups.reduce((sum, g) => sum + (g.sum || 0), 0) || 1;
 
-📐 Styling:
-- ใช้ Tailwind CDN
-- ขนาดมือถือ: `max-w-sm`, `mx-auto`, `px-4`, `py-2`
-- Card: `rounded-xl`, `shadow-md`, `bg-white`
-- สีพื้นหลังสลับอ่อน (เช่น `bg-green-50`, `bg-red-50`)
-- กราฟ responsive เต็มจอบนมือถือ
+      let html = '';
+      expenseGroups.forEach(g => {
+        const percent = ((g.sum / totalExpense) * 100).toFixed(1);
+        html += `<tr>
+          <td class="py-1 px-2 text-left text-red-600">${g.name}</td>
+          <td class="py-1 px-2 text-right">${g.sum.toLocaleString('th-TH')}</td>
+          <td class="py-1 px-2 text-right">${percent}%</td>
+        </tr>`;
+      });
+      incomeGroups.forEach(g => {
+        const percent = ((g.sum / totalIncome) * 100).toFixed(1);
+        html += `<tr>
+          <td class="py-1 px-2 text-left text-green-600">${g.name}</td>
+          <td class="py-1 px-2 text-right">${g.sum.toLocaleString('th-TH')}</td>
+          <td class="py-1 px-2 text-right">${percent}%</td>
+        </tr>`;
+      });
+      document.getElementById('category-table').innerHTML = html;
+    }
 
----
+    function renderTop5(data) {
+      // Top expense: from name in datalog
+      let items = (data.expenseTop || []).slice(0,5);
+      let expList = '';
+      items.forEach(i => {
+        expList += `<li class="flex items-center gap-2 py-2">
+          <span class="text-lg">🧾</span>
+          <div class="flex-1">
+            <div class="font-medium">${i.name}</div>
+            <div class="text-xs text-gray-400">จำนวน ${i.count} | รวม <span class="text-red-600">${i.sum.toLocaleString('th-TH')}</span></div>
+          </div>
+        </li>`;
+      });
+      document.getElementById('top-expense-list').innerHTML = expList;
 
-📌 หมายเหตุพิเศษ:
-- API ที่ให้มารองรับ JSONP (`?callback=...`) ด้วย
-- ใช้ fetch หรือ `<script src="...">` แบบ JSONP ได้ทั้งคู่
-- ไม่ต้องแก้ gs code เพิ่ม เพราะรองรับครบทุก action แล้ว
+      // Top income: from source in incomelog
+      items = (data.incomeTop || []).slice(0,5);
+      let incList = '';
+      items.forEach(i => {
+        incList += `<li class="flex items-center gap-2 py-2">
+          <span class="text-lg">🪙</span>
+          <div class="flex-1">
+            <div class="font-medium">${i.source}</div>
+            <div class="text-xs text-gray-400">จำนวน ${i.count} | รวม <span class="text-green-600">${i.sum.toLocaleString('th-TH')}</span></div>
+          </div>
+        </li>`;
+      });
+      document.getElementById('top-income-list').innerHTML = incList;
+    }
+
+    // --- INIT ---
+    window.addEventListener('DOMContentLoaded', fetchAndRenderAll);
+  </script>
+</body>
+</html>
