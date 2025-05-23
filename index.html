@@ -179,8 +179,8 @@
 
     function fetchSummary() {
       setSummaryLoading();
-      // กำหนด URL ตาม Script ของคุณ
-      var url = "https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec";
+      // แก้ไข URL ให้ตรงกับ Deploy ของ Apps Script ของคุณ
+      var url = "https://script.google.com/macros/s/AKfycbwjqsVwscF51JkP9HDpL8_c2-nHoaRCsnphGlFT9KrGyXzYa97TaPTPIO1cNLInbWNX/exec?action=summary";
       fetch(url)
         .then(res => res.json())
         .then(data => {
