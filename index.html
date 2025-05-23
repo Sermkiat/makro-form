@@ -47,29 +47,39 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
+      width: 100%;
     }
     .summary-title {
       font-weight: 600;
       font-size: 1.05em;
-      margin-bottom: 5px;
+      margin-bottom: 9px;
       letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
-    .summary-income {
+    .summary-income-label {
       color: #26a969;
       font-size: 1.35em;
       font-weight: bold;
+      margin-bottom: 0;
+      line-height: 1.1;
     }
-    .summary-expense {
+    .summary-expense-label {
       color: #f14d4d;
       font-size: 1.35em;
       font-weight: bold;
+      margin-bottom: 0;
+      line-height: 1.1;
     }
     .summary-label {
       color: #888;
       font-size: 0.97em;
       margin-top: 2px;
     }
+    .summary-income-label strong { color: #26a969; }
+    .summary-expense-label strong { color: #f14d4d; }
     /* Bottom nav style */
     .bottom-nav {
       display: flex;
@@ -126,12 +136,12 @@
     <div class="summary-section">
       <div class="summary-box">
         <span class="summary-title">📈 รายรับ</span>
-        <span id="incomeCurrentMonth" class="summary-income">เดือนนี้: กำลังโหลด...</span>
+        <span id="incomeCurrentMonth" class="summary-income-label"><strong>เดือนนี้:</strong> กำลังโหลด...</span>
         <span id="incomeLastMonth" class="summary-label">เดือนก่อน: กำลังโหลด...</span>
       </div>
       <div class="summary-box">
         <span class="summary-title">📉 รายจ่าย</span>
-        <span id="expenseCurrentMonth" class="summary-expense">เดือนนี้: กำลังโหลด...</span>
+        <span id="expenseCurrentMonth" class="summary-expense-label"><strong>เดือนนี้:</strong> กำลังโหลด...</span>
         <span id="expenseLastMonth" class="summary-label">เดือนก่อน: กำลังโหลด...</span>
       </div>
     </div>
@@ -144,7 +154,48 @@
     </div>
   </div>
   <script>
-    // สามารถใส่สคริปต์ดึงข้อมูลรวมรายรับ/รายจ่ายที่เคยมี
+    // ดึงข้อมูลสรุปรายรับ/รายจ่ายเดือนนี้และเดือนก่อนจาก Google Apps Script
+    function formatCurrencyTHB(num) {
+      num = Number(num) || 0;
+      return num.toLocaleString('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 });
+    }
+
+    function setSummary(incomeThisMonth, incomeLastMonth, expenseThisMonth, expenseLastMonth) {
+      document.getElementById('incomeCurrentMonth').innerHTML = '<strong>เดือนนี้:</strong> ' + 
+        '<span style="color:#26a969;">' + formatCurrencyTHB(incomeThisMonth) + '</span>';
+      document.getElementById('incomeLastMonth').textContent = 'เดือนก่อน: ' + formatCurrencyTHB(incomeLastMonth);
+
+      document.getElementById('expenseCurrentMonth').innerHTML = '<strong>เดือนนี้:</strong> ' + 
+        '<span style="color:#f14d4d;">' + formatCurrencyTHB(expenseThisMonth) + '</span>';
+      document.getElementById('expenseLastMonth').textContent = 'เดือนก่อน: ' + formatCurrencyTHB(expenseLastMonth);
+    }
+
+    function setSummaryLoading() {
+      document.getElementById('incomeCurrentMonth').innerHTML = '<strong>เดือนนี้:</strong> กำลังโหลด...';
+      document.getElementById('incomeLastMonth').textContent = 'เดือนก่อน: กำลังโหลด...';
+      document.getElementById('expenseCurrentMonth').innerHTML = '<strong>เดือนนี้:</strong> กำลังโหลด...';
+      document.getElementById('expenseLastMonth').textContent = 'เดือนก่อน: กำลังโหลด...';
+    }
+
+    function fetchSummary() {
+      setSummaryLoading();
+      // กำหนด URL ตาม Script ของคุณ
+      var url = "https://script.google.com/macros/s/AKfycbwQkU9Vxg1RkJ0K2IuVQ3HZXm6Vw8c2gE9d6Vn5K2Y/exec?action=summary";
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.result === 'success') {
+            setSummary(data.incomeThisMonth, data.incomeLastMonth, data.expenseThisMonth, data.expenseLastMonth);
+          } else {
+            setSummary('ผิดพลาด', 'ผิดพลาด', 'ผิดพลาด', 'ผิดพลาด');
+          }
+        })
+        .catch(() => {
+          setSummary('ผิดพลาด', 'ผิดพลาด', 'ผิดพลาด', 'ผิดพลาด');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchSummary);
   </script>
 </body>
 </html>
